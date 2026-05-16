@@ -1,30 +1,1700 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kasir AMP</title>
-    
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#2ecc71">
-    
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #f8fafc; }
-        iframe { width: 100%; height: 100%; border: none; }
-    </style>
-</head>
-<body>
-    <iframe src="https://script.google.com/macros/s/AKfycbz7SiYVGg104EtgHZ7WWg5QYpKINGSD0RLtmeRpGUj13nTPT-aO8D-OG-728zc0A5-V/exec" allow="geolocation; camera" style="width:100%; height:100%; border:none;"></iframe>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kasir AMP - Mobile Kasir</title>
+  
+  <!-- JIKA INGIN MEMBUAT PWA, TAMBAHKAN MANIFEST.JSON ANDA DI SINI NANTI -->
+  <!-- <link rel="manifest" href="manifest.json"> -->
 
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontSize: {
+            'xs': ['0.95rem', { lineHeight: '1.35rem' }],     
+            'sm': ['1.1rem', { lineHeight: '1.5rem' }],       
+            'base': ['1.25rem', { lineHeight: '1.75rem' }],   
+            'lg': ['1.4rem', { lineHeight: '1.85rem' }],      
+            'xl': ['1.6rem', { lineHeight: '2rem' }],         
+            '2xl': ['1.8rem', { lineHeight: '2.25rem' }],     
+            '3xl': ['2.25rem', { lineHeight: '2.5rem' }],     
+            '4xl': ['2.75rem', { lineHeight: '3rem' }],      
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Library Chart.js untuk Grafik Analitik -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    ::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .loader { border-top-color: #10b981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .bottom-sheet { transition: transform 0.3s ease-in-out; transform: translateY(100%); }
+    .bottom-sheet.open { transform: translateY(0); }
+    .sidebar-drawer { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+    .sidebar-drawer.open { transform: translateX(0); }
+    .app-view { display: none; width: 100%; height: 100%; flex-direction: column; background-color: white; }
+    .app-view.active { display: flex; }
+    .keypad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    
+    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 200; width: 90%; max-width: 400px; pointer-events: none; }
+    .toast { background-color: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 25px; margin-bottom: 10px; text-align: center; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; transform: translateY(-20px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; display: flex; align-items: center; justify-content: center; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast-success { background-color: #10B981; }
+    .toast-error { background-color: #EF4444; }
+    .toast-icon { margin-right: 8px; width: 20px; height: 20px; }
+
+    .skeleton-card { background-color: #fff; border-radius: 0.5rem; padding: 0.5rem; border: 1px solid #f3f4f6; display: flex; flex-direction: column; height: 100%; }
+    .skeleton-img { width: 100%; aspect-ratio: 4/5; background-color: #e5e7eb; border-radius: 0.5rem; margin-bottom: 0.5rem; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .skeleton-text-1 { height: 0.75rem; background-color: #e5e7eb; border-radius: 0.25rem; width: 75%; margin-bottom: 0.25rem; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .skeleton-text-2 { height: 0.5rem; background-color: #e5e7eb; border-radius: 0.25rem; width: 50%; margin-top: auto; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="bg-gray-100 h-screen font-sans antialiased flex justify-center">
+
+  <div id="toast-container"></div>
+
+  <div class="w-full h-full md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto bg-white relative shadow-2xl overflow-hidden flex flex-col">
+    
+    <!-- VIEW: LOGIN -->
+    <div id="view-login" class="app-view active bg-white flex-col justify-center px-8 relative">
+       <div class="w-full max-w-sm mx-auto flex flex-col">
+          <div class="flex flex-col items-center mb-10">
+             <div class="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-4 shadow-sm overflow-hidden">
+                <img id="loginLogoImg" src="" class="hidden w-full h-full object-cover">
+                <span id="loginLogoPlaceholder" class="text-4xl">🏪</span>
+             </div>
+             <h1 class="text-2xl font-extrabold text-gray-800 tracking-tight" id="loginStoreName">Kasir AMP</h1>
+             <p class="text-sm text-gray-500 mt-1">Silakan login untuk memulai</p>
+          </div>
+          
+          <div class="space-y-5 mb-8">
+             <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Email / Username</label>
+                <div class="relative">
+                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>
+                   <input type="text" id="inpLoginEmail" class="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition font-bold text-gray-800" placeholder="Masukkan email atau username">
+                </div>
+             </div>
+             
+             <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2 ml-1">Password</label>
+                <div class="relative">
+                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></div>
+                   <input type="password" id="inpLoginPassword" class="w-full pl-11 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition font-bold text-gray-800 tracking-widest" placeholder="••••••">
+                   <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-600 focus:outline-none">
+                      <svg id="eyeIconOpen" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                      <svg id="eyeIconClosed" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                   </button>
+                </div>
+             </div>
+          </div>
+          
+          <button onclick="processLogin()" id="btnLogin" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md transition flex justify-center items-center text-lg tracking-wide">
+             <span id="btnLoginText">LOGIN</span>
+             <div id="loginLoader" class="loader border-white h-6 w-6 ml-3 hidden"></div>
+          </button>
+
+          <div class="mt-12 text-xs text-gray-400 font-medium text-center">
+             <p>© 2026 Kasir AMP. All rights reserved.</p>
+          </div>
+       </div>
+    </div>
+
+    <!-- MODALS & SIDEBAR -->
+    <div id="unitTypeModal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all">
+        <div class="p-4 text-center font-extrabold text-gray-800 text-xs tracking-widest border-b border-gray-100 uppercase">Select Unit Type</div>
+        <div class="p-2">
+          <div onclick="selectUnitDynamically()" class="p-4 border-b border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition">
+            <div>
+              <div class="font-bold text-gray-800 text-lg leading-none" id="modal1UnitName">Kg</div>
+              <div class="text-xs text-gray-500 border border-gray-300 rounded px-1.5 py-0.5 mt-2 inline-block bg-white" id="unitPriceLabel">@1 = Rp 0</div>
+            </div>
+            <svg class="w-5 h-5 text-emerald-500 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
+        <div class="p-4 bg-white"><button onclick="closeModals()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3.5 rounded-xl transition">CANCEL</button></div>
+      </div>
+    </div>
+
+    <div id="qtyInputModal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold overflow-hidden" id="qtyProductImg">Me</div>
+            <div>
+              <div class="font-bold text-gray-800 text-base leading-tight" id="qtyProductName">Product Name</div>
+              <div class="text-xs text-gray-400 uppercase tracking-wider" id="qtyProductSku">SKU</div>
+            </div>
+          </div>
+          <div class="text-emerald-600 text-base font-bold" id="qtyProductPrice">Rp 0</div>
+        </div>
+        <div class="p-6">
+          
+          <div id="modalVariantSelection" class="mb-5 hidden">
+            <div class="text-xs font-bold text-gray-500 mb-2">Pilih Grade / Varian:</div>
+            <div id="modalVariantButtons" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="font-extrabold text-gray-800 mb-4 text-lg" id="qtySelectedUnit">Kg</div>
+          <div class="flex items-center justify-center space-x-6 mb-8">
+            <button onclick="adjustModalQty(-0.5)" class="w-14 h-14 bg-white border border-gray-200 rounded-2xl flex items-center justify-center text-3xl font-light shadow-sm hover:bg-gray-50 transition focus:outline-none">-</button>
+            <input type="number" id="modalQtyValue" value="1" step="0.1" class="text-4xl font-bold text-center w-24 outline-none bg-transparent appearance-none">
+            <button onclick="adjustModalQty(0.5)" class="w-14 h-14 bg-white border border-gray-200 rounded-2xl flex items-center justify-center text-3xl font-light shadow-sm hover:bg-gray-50 transition focus:outline-none">+</button>
+          </div>
+          <div class="space-y-4 text-sm text-gray-700 font-medium w-full">
+            <div>
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="chkModifyPrice" onchange="toggleModifyPrice()" class="w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500">
+                <span>Modify temporary price</span>
+              </label>
+              <div id="divModifyPrice" class="hidden mt-2 pl-8">
+                 <input type="number" id="inpTempPrice" placeholder="Harga Baru" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-emerald-500 text-sm font-bold">
+              </div>
+            </div>
+            <div>
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="chkDiscountNote" onchange="toggleDiscountNote()" class="w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500">
+                <span>Add note / discount</span>
+              </label>
+              <div id="divDiscountNote" class="hidden mt-2 pl-8 space-y-2">
+                 <div class="flex space-x-2">
+                    <input type="number" id="inpDiscountVal" placeholder="Nominal Diskon" class="flex-1 border border-gray-300 rounded-lg p-2.5 outline-none focus:border-emerald-500 text-sm font-bold">
+                    <select id="selDiscountType" class="w-20 border border-gray-300 rounded-lg p-2.5 outline-none focus:border-emerald-500 bg-white text-sm font-bold cursor-pointer">
+                       <option value="Rp">Rp</option>
+                       <option value="%">%</option>
+                    </select>
+                 </div>
+                 <input type="text" id="inpItemNote" placeholder="Catatan pesanan (Opsional)..." class="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:border-emerald-500 text-sm">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 flex space-x-3 border-t border-gray-100">
+          <button onclick="closeModals()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 rounded-xl transition">CANCEL</button>
+          <button onclick="confirmModalQty()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md transition">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEE ADDITION MODAL -->
+    <div id="feeInputModal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+           <h2 class="font-bold text-gray-800 text-lg">Tambah Biaya Lainnya</h2>
+        </div>
+        <div class="p-6 space-y-4">
+           <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">Nama Biaya (Misal: Ongkir, Kemasan)</label>
+              <input type="text" id="inpFeeName" placeholder="Contoh: Ongkos Kirim" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800">
+           </div>
+           <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">Nominal Biaya (Rp)</label>
+              <input type="number" id="inpFeeAmount" placeholder="0" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800">
+           </div>
+        </div>
+        <div class="p-5 flex space-x-3 border-t border-gray-100">
+          <button onclick="closeFeeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-4 rounded-xl transition">BATAL</button>
+          <button onclick="confirmFee()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md transition">TAMBAH</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebarOverlay" class="absolute inset-0 bg-black bg-opacity-50 z-[60] hidden transition-opacity" onclick="toggleSidebar()"></div>
+    <div id="sidebarMenu" class="sidebar-drawer absolute top-0 left-0 w-[80%] max-w-[320px] h-full bg-white z-[70] flex flex-col shadow-2xl overflow-y-auto hide-scrollbar">
+      <div class="px-5 pt-8 pb-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 bg-emerald-100 rounded-full flex justify-center items-center text-xl shadow-sm border border-emerald-200 overflow-hidden">
+             <img id="sidebarLogoImg" src="" class="hidden w-full h-full object-cover">
+             <span id="sidebarLogoPlaceholder">🏪</span>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-gray-800 leading-tight line-clamp-1" id="sidebarStoreName">Kasir AMP</h2>
+            <p class="text-xs font-bold text-emerald-600" id="sidebarRoleLabel">Role</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex-1 mt-2 pb-6">
+        <ul class="space-y-1">
+          <li id="menuNavManagement"><a href="#" onclick="navigate('management')" class="flex items-center space-x-4 px-6 py-3 hover:bg-emerald-50 transition"><svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg><span class="text-sm font-bold text-gray-800">Management</span></a></li>
+          <li><a href="#" onclick="navigate('transaction')" class="flex items-center space-x-4 px-6 py-3 hover:bg-emerald-50 transition"><svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span class="text-sm font-bold text-gray-800">Sales Transaction</span></a></li>
+          <li><a href="#" onclick="navigate('report-menu')" class="flex items-center space-x-4 px-6 py-3 hover:bg-emerald-50 transition"><svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span class="text-sm font-bold text-gray-800">Analytics & Report</span></a></li>
+          <li><a href="#" onclick="navigate('setting')" class="flex items-center space-x-4 px-6 py-3 hover:bg-emerald-50 transition"><svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg><span class="text-sm font-bold text-gray-800">Setting</span></a></li>
+          <li class="mt-4"><a href="#" onclick="doLogout()" class="flex items-center space-x-4 px-6 py-3 hover:bg-red-50 transition border-t border-gray-100"><svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg><span class="text-sm font-bold text-red-600">Logout</span></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- VIEW: MAIN TRANSACTION -->
+    <div id="view-transaction" class="app-view bg-gray-50">
+      <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 bg-white">
+        <button onclick="toggleSidebar()" class="text-gray-700 hover:bg-gray-100 p-1 rounded-full transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+        <h1 class="text-sm font-bold text-gray-800 tracking-wider">TRANSACTION</h1>
+        <button class="text-emerald-500 hover:bg-gray-100 p-1 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg></button>
+      </div>
+
+      <div class="px-4 py-3 bg-white flex justify-between items-center border-b border-gray-100 shadow-sm z-10">
+         <div class="flex space-x-3 text-gray-400 items-center">
+           <svg class="w-5 h-5 hover:text-emerald-500 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+           <button onclick="openAddProduct()" class="w-5 h-5 text-emerald-600 bg-emerald-50 rounded shadow-sm border border-emerald-100 flex items-center justify-center hover:bg-emerald-100" id="btnShortcutAdd">
+             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+           </button>
+         </div>
+         <div class="flex items-center space-x-2">
+            <button onclick="toggleGridSize()" class="p-1.5 bg-gray-50 text-gray-500 hover:bg-gray-100 rounded border border-gray-200 transition shadow-sm" title="Ubah Ukuran Grid">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            </button>
+            <button class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded text-xs font-bold border border-gray-200">All Items</button>
+         </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto bg-white hide-scrollbar pb-24 relative">
+        <div id="loadingProducts" class="hidden w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5 p-4 md:p-6">
+           <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text-1"></div><div class="skeleton-text-2"></div></div>
+           <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text-1"></div><div class="skeleton-text-2"></div></div>
+           <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text-1"></div><div class="skeleton-text-2"></div></div>
+           <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text-1"></div><div class="skeleton-text-2"></div></div>
+        </div>
+        <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5 p-4 md:p-6"></div>
+      </div>
+
+      <div class="absolute bottom-0 w-full p-4 bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t border-gray-100 z-40 flex items-center justify-between space-x-3">
+         <div class="flex-1 bg-emerald-500 text-white rounded-xl flex items-center justify-between px-4 py-3 cursor-pointer shadow-md hover:bg-emerald-600 transition" onclick="toggleCart()">
+            <div class="flex items-center space-x-2">
+               <span id="cartCountBadge" class="text-xl font-bold">0</span>
+               <span class="text-xs font-medium opacity-90 mt-1">Product</span>
+            </div>
+            <div class="flex items-center space-x-1 font-bold"><span>CONTINUE</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+         </div>
+         <button class="w-12 h-12 flex justify-center items-center text-emerald-600 border border-emerald-200 rounded-xl bg-white shadow-sm"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></button>
+      </div>
+    </div>
+
+    <!-- VIEW: MANAGEMENT -->
+    <div id="view-management" class="app-view bg-gray-50">
+      <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 bg-white">
+        <button onclick="navigate('transaction')" class="text-gray-700 p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+        <h1 class="text-sm font-bold text-emerald-600 tracking-wider">MANAGEMENT</h1>
+        <div class="w-6"></div>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-white pt-2">
+        <ul class="divide-y divide-gray-100">
+          <li><a href="#" onclick="navigate('product-list')" class="flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 cursor-pointer"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg><span class="text-sm font-bold text-gray-800">Product or Service</span></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- VIEW: PRODUCT LIST -->
+    <div id="view-product-list" class="app-view bg-white">
+      <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
+        <button onclick="navigate('management')" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-emerald-600">Product</h1>
+        <button class="text-emerald-500 p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg></button>
+      </div>
+      <div class="px-4 py-2 flex items-center space-x-3 border-b border-gray-100 shadow-sm">
+        <div class="flex-1 bg-gray-50 border border-gray-200 rounded-lg flex items-center px-3 py-1.5">
+           <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+           <input type="text" id="inpSearchProduct" onkeyup="filterAdminProducts()" placeholder="Search product name or code" class="bg-transparent w-full outline-none text-sm text-gray-700">
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-24" id="adminProductList"></div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="openAddProduct()" class="w-full bg-emerald-500 text-white font-bold py-3 rounded-lg hover:bg-emerald-600 transition shadow-md">Add Product</button>
+      </div>
+    </div>
+
+    <!-- VIEW: ADD PRODUCT -->
+    <div id="view-add-product" class="app-view bg-white">
+      <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+        <button onclick="navigate('product-list')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-black flex-1 ml-2" id="addProductTitle">Add Product</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-6 pb-24">
+         <div class="max-w-lg mx-auto w-full">
+            <div class="flex flex-col items-center justify-center mb-6">
+               <input type="file" id="frmImageFile" accept="image/*" class="hidden" onchange="previewImage(event)">
+               <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 mb-2 border border-gray-200 cursor-pointer overflow-hidden relative shadow-inner" onclick="document.getElementById('frmImageFile').click()">
+                  <svg id="imagePlaceholder" class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>
+                  <img id="imagePreview" src="" class="hidden w-full h-full object-cover absolute inset-0">
+               </div>
+               <p class="text-xs text-gray-400 font-medium">Click to upload photo</p>
+            </div>
+            <div class="space-y-4 text-sm">
+               <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Name*</label><input type="text" id="frmName" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500" placeholder="Product Name"></div>
+               <div>
+                  <label class="block text-gray-600 font-semibold mb-1 text-xs">Satuan (Unit)*</label>
+                  <select id="frmUnit" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500 bg-white">
+                    <option value="Pcs">Pcs (Pieces)</option><option value="Kg">Kg (Kilogram)</option><option value="Gram">Gram</option><option value="Box">Box / Dus</option><option value="Paket">Paket</option><option value="Porsi">Porsi</option>
+                  </select>
+               </div>
+               <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Stock*</label><input type="number" id="frmStock" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500"></div>
+               <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Code / SKU*</label><div class="flex space-x-2"><input type="text" id="frmCode" class="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500" placeholder="Auto Generate"></div></div>
+               <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Base price (Modal)*</label><input type="number" id="frmBasePrice" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500" placeholder="0"></div>
+               <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Sales price (Jual)*</label><input type="number" id="frmSalesPrice" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 outline-none focus:border-emerald-500" placeholder="0"></div>
+               
+               <div class="mt-4 border-t border-gray-100 pt-4">
+                  <label class="block text-gray-600 font-semibold mb-2 text-xs flex justify-between items-center">
+                     <span>Varian / Grade (Opsional)</span>
+                     <button type="button" onclick="addVariantField()" class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200 hover:bg-emerald-100 transition shadow-sm">+ Tambah Grade</button>
+                  </label>
+                  <div id="frmVariantsContainer" class="space-y-2 mb-2"></div>
+               </div>
+
+            </div>
+         </div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button id="btnSaveProduct" onclick="submitProduct()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md flex justify-center items-center">
+            <span id="btnSaveText">Save</span><div id="saveLoader" class="loader ease-linear rounded-full border-2 border-t-2 border-white h-5 w-5 ml-2 hidden"></div>
+         </button>
+      </div>
+    </div>
+
+    <!-- MENU ANALITIK UTAMA -->
+    <div id="view-report-menu" class="app-view bg-gray-50">
+       <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10">
+          <button onclick="navigate('transaction')" class="text-black font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+          <h1 class="text-base font-bold text-gray-800 ml-4">Analytics & Report</h1>
+       </div>
+       <div class="flex-1 overflow-y-auto px-4 py-5 pb-24 space-y-4">
+          <div onclick="openAnalytics('transaction')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+             <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                <span class="font-bold text-gray-800 text-sm">Sales Transaction (Omzet)</span>
+             </div>
+             <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+          </div>
+          <div onclick="openAnalytics('product')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
+             <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
+                <span class="font-bold text-gray-800 text-sm">Product Sales (Kuantitas)</span>
+             </div>
+             <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+          </div>
+       </div>
+    </div>
+
+    <!-- VIEW: TRANSACTION ANALYTICS (CUSTOM DESIGN) -->
+    <div id="view-analytics-transaction" class="app-view bg-white">
+       <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10">
+          <button onclick="navigate('report-menu')" class="text-black font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+          <h1 class="text-base font-bold text-emerald-600 ml-4" id="txReportTitle">Transaction Report</h1>
+       </div>
+       <div class="flex-1 overflow-y-auto">
+          <!-- Filter Tabs -->
+          <div class="flex justify-between space-x-2 bg-gray-100 p-1 mx-4 mt-4 rounded-xl mb-4">
+             <button id="tabTx-daily" onclick="fetchAnalytics('transaction', 'daily')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Day</button>
+             <button id="tabTx-monthly" onclick="fetchAnalytics('transaction', 'monthly')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Month</button>
+             <button id="tabTx-yearly" onclick="fetchAnalytics('transaction', 'yearly')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Year</button>
+          </div>
+
+          <!-- Summary Cards -->
+          <div class="flex mx-4 mb-4 shadow-sm rounded-lg overflow-hidden border border-emerald-500">
+             <div class="flex-1 bg-emerald-600 text-white p-3 text-center border-r border-emerald-500">
+                <div class="text-[11px] font-medium mb-1">Transaction amount</div>
+                <div class="font-bold text-lg" id="txSumCount">0</div>
+             </div>
+             <div class="flex-1 bg-emerald-500 text-white p-3 text-center">
+                <div class="text-[11px] font-medium mb-1">Income</div>
+                <div class="font-bold text-lg" id="txSumIncome">Rp 0</div>
+             </div>
+          </div>
+
+          <!-- Chart Area -->
+          <div class="px-2 mb-4 w-full h-48 relative">
+             <canvas id="txChartCanvas"></canvas>
+          </div>
+
+          <!-- List Detail -->
+          <div class="border-t border-gray-100 pt-2 pb-10" id="txReportList"></div>
+       </div>
+    </div>
+
+    <!-- VIEW: PRODUCT ANALYTICS (WAVE DESIGN) -->
+    <div id="view-analytics-product" class="app-view bg-gray-50">
+       <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 relative">
+          <button onclick="navigate('report-menu')" class="text-emerald-600 font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+          <h1 class="text-base font-bold text-gray-800 ml-2 truncate">Sales per Product Report</h1>
+       </div>
+       
+       <div class="flex-1 overflow-y-auto">
+          <!-- Search Bar -->
+          <div class="px-4 py-3 bg-white">
+             <div class="bg-gray-50 border border-gray-200 rounded flex items-center px-3 py-2.5">
+                <svg class="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <input type="text" id="inpSearchProdSales" onkeyup="filterProductSalesUI()" placeholder="Search product name or code" class="bg-transparent w-full outline-none text-sm text-gray-700">
+             </div>
+          </div>
+
+          <!-- Tabs (Pills style) -->
+          <div class="flex text-center text-[10px] font-bold text-white bg-emerald-500 mx-4 rounded-t-lg overflow-hidden mt-2">
+             <div id="tabProd-daily" onclick="fetchAnalytics('product', 'daily')" class="flex-1 py-3 bg-emerald-600 cursor-pointer">TODAY</div>
+             <div id="tabProd-monthly" onclick="fetchAnalytics('product', 'monthly')" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">THIS MONTH</div>
+             <div id="tabProd-yearly" onclick="fetchAnalytics('product', 'yearly')" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">THIS YEAR</div>
+             <div id="tabProd-custom" onclick="openCustomDateModal()" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">SPECIAL</div>
+          </div>
+
+          <!-- Big Green Summary Card with Wave -->
+          <div class="mx-4 bg-emerald-500 rounded-b-lg p-5 text-white relative overflow-hidden mb-4 shadow-sm h-32 flex flex-col justify-center">
+             <!-- SVG Wave Background -->
+             <svg class="absolute bottom-0 left-0 w-full h-20 opacity-20" viewBox="0 0 1440 320" preserveAspectRatio="none">
+               <path fill="#ffffff" fill-opacity="1" d="M0,224L80,213.3C160,203,320,181,480,186.7C640,192,800,224,960,224C1120,224,1280,192,1360,176L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+             </svg>
+             <div class="relative z-10 flex justify-between items-end">
+                <div>
+                   <div class="text-xs font-medium mb-1">Sold Qty</div>
+                   <div class="text-3xl font-bold" id="prodSumQty">0</div>
+                </div>
+                <div class="text-right">
+                   <div class="text-xs font-medium mb-1">Income</div>
+                   <div class="text-xl font-bold" id="prodSumIncome">Rp 0</div>
+                </div>
+             </div>
+          </div>
+
+          <!-- List Detail Data -->
+          <div class="bg-white border-t border-gray-100 pb-24" id="prodReportList"></div>
+       </div>
+    </div>
+
+    <!-- MODAL CUSTOM DATE -->
+    <div id="modalCustomDateProduct" class="hidden fixed inset-0 bg-black bg-opacity-40 z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div class="p-4 text-center font-bold text-gray-800 border-b border-gray-100">Select Time Range</div>
+        <div class="p-5 space-y-4">
+           <div><label class="block text-xs text-gray-500 mb-1 font-bold">Start Date</label><input type="date" id="inpStartDate" class="w-full border border-gray-300 rounded p-2 text-sm outline-none"></div>
+           <div><label class="block text-xs text-gray-500 mb-1 font-bold">End Date</label><input type="date" id="inpEndDate" class="w-full border border-gray-300 rounded p-2 text-sm outline-none"></div>
+        </div>
+        <div class="p-4 flex space-x-2">
+          <button onclick="document.getElementById('modalCustomDateProduct').classList.add('hidden')" class="flex-1 bg-gray-100 font-bold py-3 rounded-lg text-gray-600">Cancel</button>
+          <button onclick="applyCustomDate()" class="flex-1 bg-emerald-500 font-bold py-3 rounded-lg text-white">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: SETTING -->
+    <div id="view-setting" class="app-view bg-white">
+      <div class="flex items-center justify-between px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="toggleSidebar()" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+        <h1 class="text-base font-bold text-emerald-600 tracking-wider">SETTING</h1><div class="w-6"></div>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-24">
+         <div onclick="navigate('profile-setting')" class="flex items-center px-5 py-6 border-b border-gray-100 bg-white hover:bg-gray-50 cursor-pointer transition">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm font-bold text-xl" id="settingProfileAvatar">A</div>
+            <div class="ml-4 flex-1">
+               <h3 class="font-bold text-gray-800 text-sm" id="settingMenuName">User Name</h3>
+               <p class="text-xs text-gray-500 mt-0.5" id="settingMenuRole">Role</p>
+            </div>
+            <div class="text-gray-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>
+         </div>
+         <ul class="divide-y divide-gray-50">
+            <li id="menuSetStore"><a href="#" onclick="navigate('store')" class="flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"><div class="w-8 flex justify-center text-emerald-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg></div><span class="text-sm font-bold text-gray-800">Store / Business Data</span></a></li>
+            <li><a href="#" onclick="navigate('printer-menu')" class="flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"><div class="w-8 flex justify-center text-emerald-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></div><span class="text-sm font-bold text-gray-800">Printer and Receipt</span></a></li>
+            <li id="menuSetStaff"><a href="#" onclick="navigate('staff')" class="flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition cursor-pointer"><div class="w-8 flex justify-center text-emerald-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div><span class="text-sm font-bold text-gray-800">Staff Management</span></a></li>
+         </ul>
+      </div>
+    </div>
+
+    <!-- VIEW PROFILE SETTING -->
+    <div id="view-profile-setting" class="app-view bg-gray-50">
+      <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('setting')" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-emerald-600 tracking-wider ml-2">Profil Saya</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-gray-50 pb-24 px-4 py-5">
+         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+            <div>
+               <label class="block text-xs font-medium text-gray-500 mb-1">Nama Lengkap</label>
+               <input type="text" id="inpProfileName" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
+            </div>
+            <div>
+               <label class="block text-xs font-medium text-gray-500 mb-1">Role Akses</label>
+               <input type="text" id="inpProfileRole" disabled class="w-full border border-gray-200 bg-gray-100 rounded-lg p-3 text-sm font-bold text-gray-500 outline-none cursor-not-allowed">
+            </div>
+            <div class="pt-3 border-t border-gray-100">
+               <label class="block text-xs font-medium text-gray-500 mb-1">Password Baru (Opsional)</label>
+               <input type="password" id="inpProfilePassword" placeholder="Kosongkan jika tidak diubah" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500 tracking-widest">
+            </div>
+         </div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="saveProfileSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SIMPAN PROFIL</button>
+      </div>
+    </div>
+
+    <!-- VIEW STORE -->
+    <div id="view-store" class="app-view bg-gray-50">
+      <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('setting')" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-emerald-600 tracking-wider ml-2">Store</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto bg-gray-50 pb-24">
+         <div class="bg-white py-6 flex flex-col items-center justify-center border-b border-gray-100">
+            <input type="file" id="storeLogoFile" accept="image/*" class="hidden" onchange="previewStoreLogo(event)">
+            <div class="w-24 h-24 bg-white rounded-lg flex items-center justify-center text-emerald-50 mb-4 shadow-sm border border-emerald-100 relative cursor-pointer overflow-hidden" onclick="document.getElementById('storeLogoFile').click()">
+               <svg id="storeLogoPlaceholder" class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+               <img id="storeLogoPreview" src="" class="hidden w-full h-full object-contain absolute inset-0 bg-white">
+            </div>
+            <div class="flex space-x-6 text-emerald-600">
+               <button onclick="document.getElementById('storeLogoFile').click()" class="hover:bg-emerald-50 p-2 rounded-full transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></button>
+               <button onclick="clearStoreLogo()" class="hover:bg-red-50 text-red-500 p-2 rounded-full transition"><svg class="w-6 h-6 font-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+         </div>
+         <div class="px-4 py-4">
+            <h3 class="text-sm font-bold text-gray-600 mb-3">Store Data</h3>
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+               <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Nama Toko</label>
+                  <input type="text" id="inpStoreName" value="Kasir AMP" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
+               </div>
+               <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Tagline / Slogan</label>
+                  <input type="text" id="inpStoreTagline" placeholder="Cth: Belanja Murah & Lengkap" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
+               </div>
+               <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">No. WhatsApp / Telepon</label>
+                  <input type="text" id="inpStorePhone" placeholder="08..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
+               </div>
+               <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">Alamat Lengkap</label>
+                  <textarea id="inpStoreAddress" rows="3" placeholder="Alamat detail toko..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="saveStoreSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SAVE</button>
+      </div>
+    </div>
+
+    <!-- VIEW PRINTER MENU -->
+    <div id="view-printer-menu" class="app-view bg-gray-50">
+      <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('setting')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-black tracking-wider ml-4">Printer and Setting</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto px-4 py-5">
+         <div class="space-y-3">
+            <div onclick="navigate('receipt-setting')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition">
+               <div class="flex items-center space-x-4"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span class="font-bold text-gray-800 text-sm">Receipt Setting (Struk)</span></div>
+               <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+            
+            <div onclick="navigate('printer-connection')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 transition">
+               <div class="flex items-center space-x-4">
+                  <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7l10 10-5 5V2l5 5-10 10"></path></svg>
+                  <span class="font-bold text-gray-800 text-sm">Koneksi Printer (RawBT)</span>
+               </div>
+               <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+
+         </div>
+      </div>
+    </div>
+    
+    <!-- VIEW RECEIPT SETTING -->
+    <div id="view-receipt-setting" class="app-view bg-gray-50">
+      <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('printer-menu')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-black tracking-wider ml-4">Receipt Setting</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-24 px-4 py-5">
+         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+            <div><label class="block text-xs font-medium text-gray-500 mb-1">Header Struk (Alamat)</label><textarea id="inpReceiptHeader" rows="3" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></textarea></div>
+            <div><label class="block text-xs font-medium text-gray-500 mb-1">Footer Struk (Pesan)</label><textarea id="inpReceiptFooter" rows="2" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></textarea></div>
+            
+            <div class="pt-3 border-t border-gray-100">
+               <label class="block text-xs font-bold text-gray-700 mb-2">Logo QRIS Pembayaran (Opsional)</label>
+               <input type="file" id="inpQrisFile" accept="image/*" class="hidden" onchange="previewQrisLogo(event)">
+               <div class="flex items-end space-x-4">
+                  <div class="w-32 h-32 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 border border-dashed border-gray-300 cursor-pointer overflow-hidden relative" onclick="document.getElementById('inpQrisFile').click()">
+                     <span id="qrisPlaceholder" class="text-xs text-center px-2 font-medium">Upload<br>QRIS Anda</span>
+                     <img id="qrisPreview" src="" class="hidden w-full h-full object-contain absolute inset-0 bg-white">
+                  </div>
+                  <button onclick="clearQrisLogo()" class="text-xs text-red-500 font-bold bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition hidden" id="btnClearQris">Hapus QRIS</button>
+               </div>
+               <p class="text-[10px] text-gray-400 mt-2">*QRIS akan dicetak otomatis di bagian bawah struk jika Anda memilih metode pembayaran QRIS saat checkout.</p>
+            </div>
+         </div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="saveReceiptSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SAVE</button>
+      </div>
+    </div>
+
+    <!-- VIEW: PRINTER CONNECTION -->
+    <div id="view-printer-connection" class="app-view bg-gray-50">
+      <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('printer-menu')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-black tracking-wider ml-4">Bluetooth Printer</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-24 px-4 py-5">
+         <div class="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm mb-5 border border-blue-100">
+            <p class="font-bold mb-2 flex items-center"><svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Panduan Setup</p>
+            <ol class="list-decimal pl-4 space-y-1 text-xs font-medium leading-relaxed">
+               <li>Pastikan Printer Bluetooth menyala & sudah di-<i>Pairing</i> di pengaturan Bluetooth HP Anda.</li>
+               <li>Download aplikasi <b>RawBT Print Service</b> dari PlayStore.</li>
+               <li>Buka aplikasi RawBT, dan tes koneksi printer di dalamnya.</li>
+               <li>Sistem Kasir ini akan otomatis terhubung ke RawBT saat mencetak.</li>
+            </ol>
+         </div>
+         
+         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4 mb-5">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-2">Ukuran Kertas Printer</label>
+                <select id="selPrinterWidth" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-emerald-500 bg-white text-sm font-bold cursor-pointer">
+                   <option value="32">Kertas 58mm (Kecil - 32 Karakter)</option>
+                   <option value="48">Kertas 80mm (Besar - 48 Karakter)</option>
+                </select>
+            </div>
+         </div>
+
+         <button onclick="testPrintRawBT()" class="w-full bg-white border-2 border-emerald-500 text-emerald-600 font-extrabold py-3.5 rounded-xl hover:bg-emerald-50 transition shadow-sm tracking-wide flex justify-center items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            TEST PRINT
+         </button>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="savePrinterSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SIMPAN</button>
+      </div>
+    </div>
+
+    <!-- VIEW STAFF -->
+    <div id="view-staff" class="app-view bg-gray-50">
+      <div class="flex items-center justify-between px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <div class="flex items-center">
+           <button onclick="navigate('setting')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+           <h1 class="text-base font-bold text-black tracking-wider ml-4">Staff Management</h1>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-24">
+         <div id="loadingStaff" class="flex justify-center items-center py-10 hidden"><div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-8 w-8"></div></div>
+         <div class="px-4 py-5 space-y-3" id="staffListContainer"></div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button onclick="openAddStaff()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">ADD STAFF</button>
+      </div>
+    </div>
+
+    <!-- VIEW ADD STAFF -->
+    <div id="view-add-staff" class="app-view bg-white">
+      <div class="flex items-center justify-between px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('staff')" class="text-black p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-base font-bold text-black tracking-wider ml-4 flex-1">Tambah Staff Baru</h1>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-6">
+         <div class="space-y-4 text-sm">
+            <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Nama Lengkap*</label><input type="text" id="frmStaffName" class="w-full border border-gray-300 rounded-lg px-3 py-4 outline-none focus:border-emerald-500 font-bold"></div>
+            <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Email / Username Login*</label><input type="text" id="frmStaffEmail" class="w-full border border-gray-300 rounded-lg px-3 py-4 outline-none focus:border-emerald-500 font-bold"></div>
+            <div><label class="block text-gray-600 font-semibold mb-1 text-xs">Password Login*</label><input type="password" id="frmStaffPassword" class="w-full border border-gray-300 rounded-lg px-3 py-4 outline-none focus:border-emerald-500 tracking-widest font-bold"></div>
+            <div>
+               <label class="block text-gray-600 font-semibold mb-1 text-xs">Akses Role</label>
+               <select id="frmStaffRole" class="w-full border border-gray-300 rounded-lg px-3 py-4 outline-none focus:border-emerald-500 bg-white font-bold">
+                 <option value="Kasir">Kasir (Hanya Transaksi & Laporan)</option>
+                 <option value="Owner">Owner (Akses Penuh)</option>
+               </select>
+            </div>
+         </div>
+      </div>
+      <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
+         <button id="btnSaveStaff" onclick="submitStaff()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md text-lg flex justify-center items-center">
+            <span id="btnSaveStaffText">SIMPAN</span><div id="saveStaffLoader" class="loader border-white h-6 w-6 ml-3 hidden"></div>
+         </button>
+      </div>
+    </div>
+
+    <!-- CART BOTTOM SHEET -->
+    <div id="cartOverlay" class="absolute inset-0 bg-black bg-opacity-50 z-[80] hidden" onclick="toggleCart()"></div>
+    <div id="cartSheet" class="bottom-sheet absolute bottom-0 left-0 right-0 mx-auto md:max-w-2xl bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[90] flex flex-col max-h-[85vh]">
+      <div class="w-full flex justify-center pt-3 pb-2" onclick="toggleCart()"><div class="w-12 h-1.5 bg-gray-300 rounded-full"></div></div>
+      <div class="px-5 pb-2 border-b flex justify-between items-center">
+        <h2 class="text-lg font-bold text-gray-800">Detail Pesanan</h2>
+        <button onclick="clearCart()" class="text-xs font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full hover:bg-red-100 transition">Kosongkan</button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-5 py-2 hide-scrollbar relative">
+        <div class="text-center text-gray-400 mt-10 text-sm" id="emptyCartMsg">Belum ada pesanan masuk...</div>
+        <div id="cartList"></div>
+      </div>
+      <div class="p-5 bg-white border-t border-gray-100 rounded-t-2xl shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-sm font-semibold text-gray-500">Total Pembayaran</span>
+          <span class="text-xl font-bold text-emerald-600" id="totalPayment">Rp 0</span>
+        </div>
+        <button id="btnCheckout" onclick="goToCheckoutSummary()" disabled class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition flex justify-center items-center hover:bg-emerald-600">
+          <span id="btnCheckoutText">Bayar Sekarang</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW CHECKOUT SUMMARY -->
+    <div id="view-checkout-summary" class="app-view bg-white">
+      <div class="flex items-center justify-between px-4 py-4 bg-white shadow-sm z-10 border-b border-gray-100">
+        <button onclick="navigate('transaction')" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-lg font-bold text-gray-800" id="checkoutSummaryTotal">Rp 0</h1>
+        <button onclick="openFeeModal()" class="bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-emerald-600 transition shadow-sm">+ Fee</button>
+      </div>
+      <div class="flex-1 overflow-y-auto pb-32 pt-2 px-4" id="checkoutSummaryList"></div>
+      <div class="absolute bottom-0 w-full bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.05)] border-t border-gray-100 z-40">
+         <div class="p-4 flex items-center space-x-3">
+            <button onclick="goToPayment()" class="flex-1 bg-emerald-500 text-white font-extrabold text-lg tracking-widest py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md text-center">LANJUT PEMBAYARAN</button>
+         </div>
+      </div>
+    </div>
+
+    <!-- VIEW PAYMENT KEYPAD -->
+    <div id="view-payment" class="app-view bg-white">
+      <div class="flex items-center justify-between px-4 py-4 bg-white z-10 border-b border-gray-100 shadow-sm relative">
+        <button onclick="navigate('checkout-summary')" class="text-emerald-600 p-1 font-bold"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+        <h1 class="text-lg font-bold text-gray-800" id="paymentHeaderTotal">Rp 0</h1>
+        <button id="btnConfirmPayment" onclick="submitPayment()" class="w-8 h-8 bg-gray-200 text-white rounded flex items-center justify-center transition disabled:opacity-50"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></button>
+      </div>
+      <div class="flex-1 overflow-y-auto flex flex-col">
+         
+         <div class="bg-gray-50 px-4 py-4 border-b border-gray-100 space-y-3">
+            <div>
+               <label class="block text-xs font-bold text-gray-500 mb-1">Nama Pelanggan (Opsional)</label>
+               <input type="text" id="inpCustomerName" placeholder="Contoh: Budi" class="w-full border border-gray-300 rounded-xl p-2.5 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800 bg-white shadow-sm">
+            </div>
+            <div>
+               <label class="block text-xs font-bold text-gray-500 mb-1">Diskon Transaksi (Opsional)</label>
+               <div class="flex space-x-2">
+                  <input type="number" id="inpGlobalDiscount" placeholder="0" class="flex-1 border border-gray-300 rounded-xl p-2.5 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800 bg-white shadow-sm" onkeyup="applyGlobalDiscount()" onchange="applyGlobalDiscount()">
+                  <select id="selGlobalDiscountType" class="w-20 border border-gray-300 rounded-xl p-2.5 outline-none focus:border-emerald-500 bg-white text-sm font-bold cursor-pointer shadow-sm" onchange="applyGlobalDiscount()">
+                     <option value="Rp">Rp</option>
+                     <option value="%">%</option>
+                  </select>
+               </div>
+            </div>
+         </div>
+
+         <div id="paymentWarning" class="bg-amber-400 text-gray-900 px-4 py-3 flex items-center justify-between shadow-sm hidden">
+            <div class="flex items-center space-x-2 text-sm font-bold"><div class="w-5 h-5 rounded-full border border-gray-900 flex items-center justify-center text-xs">?</div><span>Uang yang dibayar pelanggan kurang!</span></div>
+         </div>
+         
+         <div class="flex justify-center space-x-3 mt-4 px-4">
+            <button id="btnMethCash" onclick="setPaymentMethod('Cash')" class="flex-1 py-2.5 bg-emerald-500 text-white font-bold rounded-xl shadow-sm border-2 border-emerald-500 transition">TUNAI</button>
+            <button id="btnMethQris" onclick="setPaymentMethod('QRIS')" class="flex-1 py-2.5 bg-white text-gray-500 font-bold rounded-xl border-2 border-gray-200 hover:border-emerald-500 hover:text-emerald-500 transition">QRIS</button>
+         </div>
+
+         <div class="py-4 flex justify-center items-center"><h1 class="text-4xl font-bold text-gray-500 tracking-tight" id="displayPaymentAmount">Rp 0</h1></div>
+         <div class="flex-1"></div>
+         <div class="bg-white px-2 py-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-20 border-t border-gray-100" id="keypadArea">
+            <div class="keypad-grid max-w-md mx-auto w-full">
+               <button onclick="keypadType('7')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">7</button><button onclick="keypadType('8')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">8</button><button onclick="keypadType('9')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">9</button><button onclick="keypadType('C')" class="h-16 text-2xl font-medium text-gray-500 hover:bg-gray-100 rounded-xl transition">C</button>
+               <button onclick="keypadType('4')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">4</button><button onclick="keypadType('5')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">5</button><button onclick="keypadType('6')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">6</button><button onclick="keypadType('BACK')" class="h-16 text-2xl font-medium text-emerald-500 hover:bg-gray-100 rounded-xl transition flex items-center justify-center"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg></button>
+               <button onclick="keypadType('1')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">1</button><button onclick="keypadType('2')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">2</button><button onclick="keypadType('3')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">3</button><button onclick="keypadType('AUTO')" class="row-span-2 bg-emerald-100 border border-emerald-200 rounded-xl flex flex-col items-center justify-center text-emerald-700 hover:bg-emerald-200 transition shadow-sm"><span class="font-bold text-sm mb-1">Uang Pas</span><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
+               <button onclick="keypadType('0')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">0</button><button onclick="keypadType('000')" class="h-16 text-2xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">000</button><button onclick="keypadType('.')" class="h-16 text-3xl font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition">.</button>
+            </div>
+         </div>
+      </div>
+      <div id="paymentLoader" class="hidden absolute inset-0 bg-white bg-opacity-90 z-[150] flex flex-col items-center justify-center"><div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-12 w-12 mb-4"></div><p class="font-bold text-emerald-600">Processing Payment...</p></div>
+    </div>
+
+    <!-- VIEW SUCCESS AND PRINT -->
+    <div id="view-success" class="app-view bg-[#eefcf2]">
+      <div class="flex-1 overflow-y-auto px-6 py-10 flex flex-col items-center">
+         <h1 class="text-2xl font-extrabold text-gray-800 mb-6">Transaksi Sukses!</h1>
+         <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-emerald-100 mb-8 relative">
+            <svg class="w-16 h-16 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <div class="absolute bottom-4 left-4 bg-emerald-500 text-white rounded-full p-1 border-2 border-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+         </div>
+         <div class="w-full flex justify-between items-end border-b-2 border-emerald-500 pb-3 mb-6">
+            <span class="text-gray-500 font-bold text-lg">Kembalian</span><span class="text-gray-800 font-bold text-xl" id="successChangeDisplay">Rp 0</span>
+         </div>
+         <div class="w-full space-y-4 font-bold text-gray-800 mb-8 mt-4">
+            <div class="flex justify-between items-center cursor-pointer hover:text-emerald-600 transition" onclick="printReceiptRawBT(true)">
+               <span>Cetak Struk Transaksi</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+            <div class="flex justify-between items-center cursor-pointer hover:text-emerald-600 transition" onclick="printReceiptRawBT(false)">
+               <div><span>Cetak Struk Dapur</span><p class="text-xs text-gray-400 font-medium">*Tanpa Harga</p></div><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </div>
+            <div class="flex justify-between items-center cursor-pointer hover:text-emerald-600 transition border-t border-emerald-100 pt-4" onclick="sendReceiptToWhatsApp()">
+               <span>Kirim Struk ke WhatsApp</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </div>
+            <div class="flex justify-between items-center cursor-pointer hover:text-emerald-600 transition" onclick="previewReceipt()">
+               <span>Preview Struk</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            </div>
+         </div>
+      </div>
+      <div class="p-4 w-full"><button onclick="finishTransaction()" class="w-full bg-emerald-500 text-white font-extrabold tracking-widest py-4 rounded-xl shadow-md hover:bg-emerald-600 transition">SELESAI</button></div>
+    </div>
+
+    <!-- MODAL PREVIEW STRUK -->
+    <div id="receiptPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[200] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+        <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+           <h2 class="font-bold text-gray-800">Preview Struk</h2>
+           <button onclick="closeReceiptPreview()" class="text-gray-500 hover:text-red-500 font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 bg-gray-200 flex justify-center">
+           <div class="bg-white shadow-md border border-gray-300 p-4 w-full" style="max-width: 320px;">
+              <pre id="previewReceiptContent" class="text-xs font-mono text-gray-800 whitespace-pre overflow-x-auto leading-snug m-0"></pre>
+              <div id="previewQrisContainer" class="hidden mt-4 text-center border-t border-dashed border-gray-300 pt-4">
+                 <img id="previewQrisImage" src="" class="mx-auto w-3/4 max-w-[200px]">
+                 <p class="font-mono text-[10px] font-bold mt-2">SCAN UNTUK MEMBAYAR</p>
+              </div>
+           </div>
+        </div>
+        <div class="p-4 bg-white border-t border-gray-100 flex space-x-3">
+           <button id="btnModalPrint" onclick="printReceiptRawBT(true)" class="flex-1 bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition text-sm flex justify-center items-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Cetak</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ============================================== -->
+    <!-- JAVASCRIPT: LOGIKA & KONEKSI API PWA             -->
+    <!-- ============================================== -->
     <script>
-        // PERBAIKAN PATH: Menggunakan ./sw.js
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Terdaftar!', reg))
-                    .catch(err => console.error('Service Worker Gagal!', err));
+    // =======================================================
+    // WAJIB DIISI: MASUKKAN URL DEPLOY WEB APP ANDA DI SINI
+    // =======================================================
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzKy2IshXe-hdfTpxgiHKCyZWZoURbQor-gR_vEbdfBFq-W2qV0ufIadFYNUzHb-dn-/exec"; 
+
+    // BRIDGE API UTAMA (Menggantikan google.script.run)
+    function callGAS(action, params, onSuccess) {
+        if (!GAS_URL || GAS_URL.includes("URL_GOOGLE_APPS_SCRIPT")) {
+            console.warn("GAS URL belum disetting. Menggunakan Mock Data (Mode Preview).");
+            fallbackMockData(action, onSuccess, params);
+            return;
+        }
+
+        fetch(GAS_URL, {
+            redirect: "follow",
+            method: 'POST',
+            body: JSON.stringify({ action: action, params: params }),
+            headers: { "Content-Type": "text/plain;charset=utf-8" }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(onSuccess) onSuccess(data);
+        })
+        .catch(err => {
+            console.error("Fetch Error:", err);
+            showToast("Server offline, menggunakan data demo", "error");
+            fallbackMockData(action, onSuccess, params);
+        });
+    }
+
+    // FUNGSI DEMO (Jika GAS_URL tidak diisi / Error)
+    function fallbackMockData(action, onSuccess, p) {
+        setTimeout(() => {
+            if (action === 'loginUser') {
+               if (p.email === 'owner' && p.password === '123') onSuccess({status:'success', data:{id:'STF-01', name:'Owner AMP', role:'Owner'}});
+               else onSuccess({status:'success', data:{id:'STF-02', name:'Kasir AMP', role:'Kasir'}});
+            }
+            else if (action === 'getSettings') {
+               onSuccess({status:'success', data: {storeName: 'Kasir AMP', storeTagline: 'PWA Demo Store'}});
+            }
+            else if (action === 'getProducts') {
+               onSuccess({status:'success', data: [ { id: 'ME-01', name: 'Melon Honey Stripe', price: 45000, basePrice: 30000, stock: 120, unit: 'Kg', image: '', variants: [{grade: 'Grade A', price: 50000}, {grade: 'Grade B', price: 40000}] }, { id: 'AP-03', name: 'Apel Fuji Premium', price: 15000, basePrice: 10000, stock: 200, unit: 'Pcs', image: '' } ]});
+            }
+            else if (action === 'getStaffList') {
+               onSuccess({status:'success', data: [{id:'1', name:'Owner AMP', role:'Owner', email:'owner'}, {id:'2', name:'Kasir AMP', role:'Kasir', email:'kasir'}]});
+            }
+            else if (action === 'getAnalyticsData') {
+               if(p.type === 'transaction') {
+                   onSuccess({status:'success', data: [{ period: 'Hari Ini', totalSales: 850000, trxCount: 5, dailyTrxList: [ { id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: '16/05/2026 08:15' } ] }]});
+               } else {
+                   onSuccess({status:'success', data: [{ id: 'ME-01', name: 'Melon Honey Stripe', qty: 25, revenue: 1125000 }]});
+               }
+            }
+            else if (action === 'getTrxDetailByPeriod') {
+                onSuccess({status: 'success', data: [{ id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: p.periodStr + ' 08:15' }]});
+            }
+            else {
+               // Default mock response
+               onSuccess({status:'success', message:'Tersimpan di mode demo', trxId: 'TRX-DEMO'});
+            }
+        }, 800);
+    }
+
+
+    let currentUser = null; let productsData = []; let cart = []; let currentSelectedProductId = null; let currentSelectedGrade = null; let currentGradePrice = 0; let currentCheckoutTotal = 0; let currentFinalTotal = 0; let currentDiscountAmount = 0; let currentPaymentInput = "0"; let currentPayVal = 0; let lastTransactionCart = []; let lastCustomerName = ""; let lastDiscountAmount = 0; let editingProductId = null; let currentImageBase64 = ""; let currentPaymentMethod = 'Cash'; let lastPaymentMethod = 'Cash'; let currentQrisBase64 = "";
+
+    const formatRupiah = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast toast-' + type;
+        const icon = type === 'success' ? '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : '<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        toast.innerHTML = icon + '<span>' + message + '</span>'; container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => container.removeChild(toast), 300); }, 3000);
+    }
+
+    window.onload = function() { checkLoginSession(); };
+
+    function checkLoginSession() {
+       const savedUser = localStorage.getItem('zettpos_user_session');
+       if (savedUser) { currentUser = JSON.parse(savedUser); applyRoleAccess(); navigate('transaction'); loadProducts(); fetchSettingsFromServer(); }
+    }
+
+    function togglePassword() {
+       const inp = document.getElementById('inpLoginPassword'); const eyeOpen = document.getElementById('eyeIconOpen'); const eyeClosed = document.getElementById('eyeIconClosed');
+       if (inp.type === "password") { inp.type = "text"; eyeOpen.classList.remove('hidden'); eyeClosed.classList.add('hidden'); } 
+       else { inp.type = "password"; eyeOpen.classList.add('hidden'); eyeClosed.classList.remove('hidden'); }
+    }
+
+    function processLogin() {
+       const email = document.getElementById('inpLoginEmail').value; const password = document.getElementById('inpLoginPassword').value;
+       if(!email || !password) { showToast("Email dan Password wajib diisi!", "error"); return; }
+       const btn = document.getElementById('btnLogin'); const loader = document.getElementById('loginLoader'); const text = document.getElementById('btnLoginText');
+       btn.disabled = true; loader.classList.remove('hidden'); text.innerText = 'MEMVERIFIKASI...';
+
+       callGAS('loginUser', {email: email, password: password}, function(response) {
+           btn.disabled = false; loader.classList.add('hidden'); text.innerText = 'LOGIN';
+           if(response.status === 'success') {
+               currentUser = response.data; localStorage.setItem('zettpos_user_session', JSON.stringify(currentUser));
+               applyRoleAccess(); document.getElementById('inpLoginEmail').value = ''; document.getElementById('inpLoginPassword').value = '';
+               navigate('transaction'); loadProducts(); fetchSettingsFromServer(); showToast("Login Berhasil!", "success");
+           } else { showToast(response.message, "error"); }
+       });
+    }
+
+    function doLogout() { currentUser = null; cart = []; localStorage.removeItem('zettpos_user_session'); updateSystem(); navigate('login'); showToast("Anda telah logout."); }
+
+    function applyRoleAccess() {
+       if(!currentUser) return;
+       document.getElementById('sidebarRoleLabel').innerText = currentUser.role + ' - ' + currentUser.name;
+       const isKasir = currentUser.role === 'Kasir';
+       document.getElementById('menuNavManagement').style.display = isKasir ? 'none' : 'flex';
+       document.getElementById('btnShortcutAdd').style.display = isKasir ? 'none' : 'flex';
+       
+       document.getElementById('settingMenuName').innerText = currentUser.name;
+       document.getElementById('settingMenuRole').innerText = currentUser.role;
+       document.getElementById('settingProfileAvatar').innerText = currentUser.name.charAt(0).toUpperCase();
+    }
+
+    function navigate(viewName) {
+      if(currentUser === null && viewName !== 'login') return;
+      const targetView = document.getElementById('view-' + viewName); if (!targetView) return;
+      document.querySelectorAll('.app-view').forEach(el => el.classList.remove('active')); targetView.classList.add('active');
+      const sidebar = document.getElementById('sidebarMenu'); if (sidebar && sidebar.classList.contains('open')) toggleSidebar();
+      
+      if (viewName === 'staff' && currentUser.role === 'Owner') loadStaffData();
+      if (viewName === 'profile-setting') { document.getElementById('inpProfileName').value = currentUser.name; document.getElementById('inpProfileRole').value = currentUser.role; document.getElementById('inpProfilePassword').value = ''; }
+    }
+
+    function toggleSidebar() { 
+        const sidebar = document.getElementById('sidebarMenu'); const overlay = document.getElementById('sidebarOverlay'); 
+        if (!sidebar || !overlay) return; 
+        if(sidebar.classList.contains('open')) { sidebar.classList.remove('open'); setTimeout(() => overlay.classList.add('hidden'), 300); } 
+        else { overlay.classList.remove('hidden'); setTimeout(() => sidebar.classList.add('open'), 10); } 
+    }
+
+    let appSettings = JSON.parse(localStorage.getItem('zettpos_settings_full')) || { storeName: 'Kasir AMP', storeTagline: '', storePhone: '', storeAddress: '', storeType: 'Retail', storeLogo: '', receiptHeader: '', receiptFooter: '', printerWidth: 32, qrisImage: '' };
+
+    function fetchSettingsFromServer() {
+       callGAS('getSettings', {}, function(res) {
+          if(res.status === 'success') { 
+              appSettings = res.data; if(!appSettings.printerWidth) appSettings.printerWidth = 32; 
+              localStorage.setItem('zettpos_settings_full', JSON.stringify(appSettings)); loadSettingsUI(); 
+          }
+       });
+    }
+
+    function loadSettingsUI() {
+        document.getElementById('sidebarStoreName').innerText = appSettings.storeName; document.getElementById('loginStoreName').innerText = appSettings.storeName; document.getElementById('inpStoreName').value = appSettings.storeName; document.getElementById('inpStoreTagline').value = appSettings.storeTagline || ''; document.getElementById('inpStorePhone').value = appSettings.storePhone || ''; document.getElementById('inpStoreAddress').value = appSettings.storeAddress || ''; document.getElementById('inpReceiptHeader').value = appSettings.receiptHeader || ''; document.getElementById('inpReceiptFooter').value = appSettings.receiptFooter || ''; document.getElementById('selPrinterWidth').value = appSettings.printerWidth || "32"; 
+        
+        currentQrisBase64 = appSettings.qrisImage || "";
+        const qrisPreview = document.getElementById('qrisPreview'); const qrisPh = document.getElementById('qrisPlaceholder'); const btnClearQris = document.getElementById('btnClearQris');
+        if(currentQrisBase64) { if(qrisPreview) { qrisPreview.src = currentQrisBase64; qrisPreview.classList.remove('hidden'); } if(qrisPh) qrisPh.classList.add('hidden'); if(btnClearQris) btnClearQris.classList.remove('hidden'); } 
+        else { if(qrisPreview) { qrisPreview.src = ""; qrisPreview.classList.add('hidden'); } if(qrisPh) qrisPh.classList.remove('hidden'); if(btnClearQris) btnClearQris.classList.add('hidden'); }
+        
+        const logoPreview = document.getElementById('storeLogoPreview'); const logoPh = document.getElementById('storeLogoPlaceholder'); const sidebarImg = document.getElementById('sidebarLogoImg'); const sidebarPh = document.getElementById('sidebarLogoPlaceholder'); const loginImg = document.getElementById('loginLogoImg'); const loginPh = document.getElementById('loginLogoPlaceholder');
+        if(appSettings.storeLogo) {
+            if(logoPreview) { logoPreview.src = appSettings.storeLogo; logoPreview.classList.remove('hidden'); } if(logoPh) logoPh.classList.add('hidden');
+            if(sidebarImg) { sidebarImg.src = appSettings.storeLogo; sidebarImg.classList.remove('hidden'); } if(sidebarPh) sidebarPh.classList.add('hidden');
+            if(loginImg) { loginImg.src = appSettings.storeLogo; loginImg.classList.remove('hidden'); } if(loginPh) loginPh.classList.add('hidden');
+            currentImageBase64 = appSettings.storeLogo; 
+        } else {
+            if(logoPreview) { logoPreview.src = ""; logoPreview.classList.add('hidden'); } if(logoPh) logoPh.classList.remove('hidden');
+            if(sidebarImg) { sidebarImg.src = ""; sidebarImg.classList.add('hidden'); } if(sidebarPh) sidebarPh.classList.remove('hidden');
+            if(loginImg) { loginImg.src = ""; loginImg.classList.add('hidden'); } if(loginPh) loginPh.classList.remove('hidden');
+            currentImageBase64 = "";
+        }
+    }
+    
+    function previewStoreLogo(event) {
+       const file = event.target.files[0]; if(!file) return; 
+       const reader = new FileReader(); reader.onload = function(e) { 
+           const img = new Image(); img.onload = function() { 
+               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 200; let width = img.width; let height = img.height; 
+               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
+               canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
+               currentImageBase64 = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('storeLogoPreview').src = currentImageBase64; document.getElementById('storeLogoPreview').classList.remove('hidden'); document.getElementById('storeLogoPlaceholder').classList.add('hidden'); 
+           }; img.src = e.target.result; 
+       }; reader.readAsDataURL(file);
+    }
+
+    function clearStoreLogo() { currentImageBase64 = ""; document.getElementById('storeLogoFile').value = ""; document.getElementById('storeLogoPreview').classList.add('hidden'); document.getElementById('storeLogoPlaceholder').classList.remove('hidden'); }
+    
+    function previewQrisLogo(event) {
+       const file = event.target.files[0]; if(!file) return; 
+       const reader = new FileReader(); reader.onload = function(e) { 
+           const img = new Image(); img.onload = function() { 
+               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 400; let width = img.width; let height = img.height; 
+               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
+               canvas.width = width; canvas.height = height; ctx.fillStyle = "white"; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height); 
+               currentQrisBase64 = canvas.toDataURL('image/jpeg', 0.8); document.getElementById('qrisPreview').src = currentQrisBase64; document.getElementById('qrisPreview').classList.remove('hidden'); document.getElementById('qrisPlaceholder').classList.add('hidden'); document.getElementById('btnClearQris').classList.remove('hidden'); 
+           }; img.src = e.target.result; 
+       }; reader.readAsDataURL(file);
+    }
+
+    function clearQrisLogo() { currentQrisBase64 = ""; document.getElementById('inpQrisFile').value = ""; document.getElementById('qrisPreview').classList.add('hidden'); document.getElementById('qrisPlaceholder').classList.remove('hidden'); document.getElementById('btnClearQris').classList.add('hidden'); }
+
+    function saveStoreSettings() { 
+        if(currentUser.role !== 'Owner') { showToast("Hanya Owner yang bisa merubah pengaturan Toko.", "error"); return; } 
+        appSettings.storeName = document.getElementById('inpStoreName').value; appSettings.storeTagline = document.getElementById('inpStoreTagline').value; appSettings.storePhone = document.getElementById('inpStorePhone').value; appSettings.storeAddress = document.getElementById('inpStoreAddress').value; appSettings.storeLogo = currentImageBase64; 
+        localStorage.setItem('zettpos_settings_full', JSON.stringify(appSettings)); loadSettingsUI(); showToast("Menyimpan data toko..."); 
+        
+        callGAS('saveSettings', {appSettings: appSettings}, res => {
+            if(res.status!=='success') showToast(res.message, 'error');
+        });
+    }
+
+    function saveProfileSettings() {
+        const newName = document.getElementById('inpProfileName').value.trim();
+        if (!newName) { showToast("Nama tidak boleh kosong!", "error"); return; }
+        currentUser.name = newName; localStorage.setItem('zettpos_user_session', JSON.stringify(currentUser)); applyRoleAccess();
+        showToast("Profil berhasil diperbarui!", "success"); setTimeout(() => { navigate('setting'); }, 800);
+    }
+    
+    function saveReceiptSettings() { 
+        appSettings.receiptHeader = document.getElementById('inpReceiptHeader').value; appSettings.receiptFooter = document.getElementById('inpReceiptFooter').value; appSettings.qrisImage = currentQrisBase64; localStorage.setItem('zettpos_settings_full', JSON.stringify(appSettings)); showToast("Menyimpan format struk..."); 
+        
+        callGAS('saveSettings', {appSettings: appSettings}, res => {
+            if(res.status!=='success') showToast(res.message, 'error');
+        });
+    }
+
+    function savePrinterSettings() { 
+        appSettings.printerWidth = document.getElementById('selPrinterWidth').value; localStorage.setItem('zettpos_settings_full', JSON.stringify(appSettings)); showToast("Pengaturan ukuran kertas disimpan..."); 
+        
+        callGAS('saveSettings', {appSettings: appSettings}, res => {
+            if(res.status!=='success') showToast(res.message, 'error');
+        });
+    }
+
+    function loadProducts() {
+      const cachedProd = localStorage.getItem('zettpos_products_cache'); const loadingEl = document.getElementById('loadingProducts'); const gridEl = document.getElementById('productGrid');
+      if(cachedProd) { productsData = JSON.parse(cachedProd); renderGridPOS(productsData); renderAdminList(productsData); } 
+      else { loadingEl.classList.replace('hidden', 'grid'); gridEl.classList.add('hidden'); }
+      fetchProductsFromServer();
+    }
+
+    function fetchProductsFromServer() {
+      const loadingEl = document.getElementById('loadingProducts'); const gridEl = document.getElementById('productGrid');
+      callGAS('getProducts', {}, function(response) {
+          loadingEl.classList.replace('grid', 'hidden'); gridEl.classList.remove('hidden'); 
+          if(response.status === 'success') { 
+              productsData = response.data; localStorage.setItem('zettpos_products_cache', JSON.stringify(productsData)); 
+              renderGridPOS(productsData); renderAdminList(productsData); 
+          } 
+      });
+    }
+
+    function filterAdminProducts() {
+        const query = document.getElementById('inpSearchProduct').value.toLowerCase();
+        const filteredData = productsData.filter(p => p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query));
+        renderAdminList(filteredData);
+    }
+
+    let isLargeGrid = true;
+    function toggleGridSize() {
+        isLargeGrid = !isLargeGrid;
+        const grid = document.getElementById('productGrid'); const skeleton = document.getElementById('loadingProducts');
+        const largeClasses = ['grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-5']; const smallClasses = ['grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'lg:grid-cols-6'];
+        if (isLargeGrid) { grid.classList.remove(...smallClasses); grid.classList.add(...largeClasses); skeleton.classList.remove(...smallClasses); skeleton.classList.add(...largeClasses); } 
+        else { grid.classList.remove(...largeClasses); grid.classList.add(...smallClasses); skeleton.classList.remove(...largeClasses); skeleton.classList.add(...smallClasses); }
+    }
+
+    function renderGridPOS(data) {
+      const grid = document.getElementById('productGrid'); if (!grid) return; grid.innerHTML = '';
+      data.forEach(product => {
+        const cartItems = cart.filter(i => i.id === product.id && !i.isFee); 
+        const floatQtyDisplay = cartItems.reduce((sum, item) => sum + item.qty, 0); 
+        const badgeHtml = floatQtyDisplay > 0 ? '<div class="absolute -top-2 -right-2 bg-amber-400 text-gray-900 font-bold text-sm min-w-[32px] h-8 px-1 rounded-full flex items-center justify-center shadow-md animate-[pulse_0.3s_ease-in-out]">' + floatQtyDisplay + '</div>' : ''; 
+        const imageElement = product.image ? '<img src="' + product.image + '" class="w-full h-full object-cover rounded-lg">' : '<span class="text-sm text-gray-400 font-bold text-center px-2 break-words">' + product.name + '</span>';
+        const hasVariantBadge = (product.variants && product.variants.length > 0) ? '<div class="absolute top-1 left-1 bg-white bg-opacity-90 backdrop-blur-sm text-[10px] font-bold text-emerald-600 px-1.5 py-0.5 rounded shadow-sm border border-emerald-100 z-10">Pilih Grade</div>' : '';
+        grid.innerHTML += '<div onclick="openUnitModal(\'' + product.id + '\')" class="bg-white rounded-lg p-2.5 flex flex-col cursor-pointer transition relative h-full border border-gray-100 hover:shadow-md hover:border-emerald-200"><div class="w-full aspect-[4/5] bg-gray-50 rounded-lg flex items-center justify-center text-3xl text-gray-300 font-extrabold mb-3 relative border border-dashed border-gray-200 overflow-hidden">' + hasVariantBadge + imageElement + badgeHtml + '</div><h3 class="text-sm md:text-base font-bold text-gray-800 leading-tight mb-1.5 break-words line-clamp-2">' + product.name + '</h3><span class="text-xs md:text-sm text-emerald-600 font-extrabold mt-auto">' + formatRupiah(product.price) + '</span></div>';
+      });
+    }
+
+    function renderAdminList(data) {
+      const list = document.getElementById('adminProductList'); if (!list) return; list.innerHTML = '';
+      data.forEach(product => {
+        const imageElement = product.image ? '<img src="' + product.image + '" class="w-full h-full object-cover rounded-lg">' : '<span class="text-[10px] text-gray-400 font-bold text-center">No Img</span>';
+        const variantCount = product.variants ? product.variants.length : 0;
+        const variantBadge = variantCount > 0 ? '<div class="mt-2 inline-block bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-100 ml-1">' + variantCount + ' Grade</div>' : '';
+        list.innerHTML += '<div class="flex items-center px-4 py-3 border-b border-gray-100 bg-white hover:bg-gray-50 transition"><div class="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 font-bold text-lg mr-4 border border-dashed border-gray-200 overflow-hidden">' + imageElement + '</div><div class="flex-1"><h3 class="text-sm font-bold text-gray-800">' + product.name + '</h3><p class="text-xs text-gray-500 uppercase tracking-widest mt-0.5">' + product.id + '</p><div class="mt-2 inline-block bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-100">HPP ' + formatRupiah(product.basePrice || 0) + '</div>' + variantBadge + '</div><div class="text-sm font-bold text-gray-700 text-right flex flex-col items-end"><span>' + formatRupiah(product.price) + '</span><button onclick="openEditProduct(\'' + product.id + '\')" class="mt-2 text-emerald-500 bg-emerald-50 px-3 py-1 rounded flex items-center shadow-sm hover:bg-emerald-100 transition text-xs font-bold border border-emerald-200">Edit</button></div></div>';
+      });
+    }
+
+    function previewImage(event) { 
+        const file = event.target.files[0]; if(!file) return; 
+        const reader = new FileReader(); reader.onload = function(e) { 
+            const img = new Image(); img.onload = function() { 
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 200; const MAX_HEIGHT = 200; let width = img.width; let height = img.height; 
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } 
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
+                currentImageBase64 = canvas.toDataURL('image/jpeg', 0.6); document.getElementById('imagePreview').src = currentImageBase64; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); 
+            }; img.src = e.target.result; 
+        }; reader.readAsDataURL(file); 
+    }
+    
+    function addVariantField(grade = '', price = '') {
+        const container = document.getElementById('frmVariantsContainer'); const row = document.createElement('div'); row.className = 'flex space-x-2 items-center variant-row';
+        row.innerHTML = '<input type="text" placeholder="Nama Grade" value="' + grade + '" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500 var-name font-bold"><input type="number" placeholder="Harga" value="' + price + '" class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none focus:border-emerald-500 var-price font-bold"><button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 rounded border border-red-100">X</button>';
+        container.appendChild(row);
+    }
+
+    function openAddProduct() { 
+        editingProductId = null; currentImageBase64 = ""; document.getElementById('addProductTitle').innerText = "Add Product"; document.getElementById('frmName').value = ""; document.getElementById('frmUnit').value = "Pcs"; document.getElementById('frmStock').value = 0; document.getElementById('frmCode').value = ""; document.getElementById('frmCode').disabled = false; document.getElementById('frmBasePrice').value = ""; document.getElementById('frmSalesPrice').value = ""; document.getElementById('imagePreview').src = ""; document.getElementById('imagePreview').classList.add('hidden'); document.getElementById('imagePlaceholder').classList.remove('hidden'); document.getElementById('frmVariantsContainer').innerHTML = ''; navigate('add-product'); 
+    }
+
+    function openEditProduct(id) { 
+        const p = productsData.find(x => x.id === id); if(!p) return; 
+        editingProductId = p.id; currentImageBase64 = p.image || ""; document.getElementById('addProductTitle').innerText = "Edit Product"; document.getElementById('frmName').value = p.name; document.getElementById('frmUnit').value = p.unit || "Pcs"; document.getElementById('frmStock').value = p.stock; document.getElementById('frmCode').value = p.id; document.getElementById('frmCode').disabled = true; document.getElementById('frmBasePrice').value = p.basePrice; document.getElementById('frmSalesPrice').value = p.price; document.getElementById('frmVariantsContainer').innerHTML = ''; 
+        if(p.variants && p.variants.length > 0) { p.variants.forEach(v => addVariantField(v.grade, v.price)); }
+        if (currentImageBase64) { document.getElementById('imagePreview').src = currentImageBase64; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); } else { document.getElementById('imagePreview').src = ""; document.getElementById('imagePreview').classList.add('hidden'); document.getElementById('imagePlaceholder').classList.remove('hidden'); } 
+        navigate('add-product'); 
+    }
+
+    function submitProduct() { 
+        const name = document.getElementById('frmName').value; const unit = document.getElementById('frmUnit').value; const stock = document.getElementById('frmStock').value; const code = document.getElementById('frmCode').value; const baseP = document.getElementById('frmBasePrice').value; const salesP = document.getElementById('frmSalesPrice').value; 
+        if(!name || !salesP) { showToast("Nama dan Harga Jual wajib diisi!", "error"); return; } 
+        let variantsData = []; document.querySelectorAll('.variant-row').forEach(row => { let n = row.querySelector('.var-name').value; let p = row.querySelector('.var-price').value; if(n && p) variantsData.push({grade: n, price: Number(p)}); });
+        const payload = { id: editingProductId, name: name, unit: unit, stock: Number(stock), code: editingProductId || code, basePrice: Number(baseP), salesPrice: Number(salesP), image: currentImageBase64, variants: variantsData }; 
+        const btn = document.getElementById('btnSaveProduct'); const loader = document.getElementById('saveLoader'); const text = document.getElementById('btnSaveText'); 
+        btn.disabled = true; loader.classList.remove('hidden'); text.innerText = 'Menyimpan...'; 
+        
+        let act = editingProductId ? 'editProduct' : 'addProduct';
+        callGAS(act, {payload: payload}, function(res) {
+            btn.disabled = false; loader.classList.add('hidden'); text.innerText = 'Save'; 
+            if(res.status === 'success') { showToast(editingProductId ? 'Produk berhasil diupdate!' : 'Produk ditambahkan!', 'success'); fetchProductsFromServer(); navigate('product-list'); } 
+            else { showToast(res.message, "error"); }
+        });
+    }
+
+    function toggleModifyPrice() { const div = document.getElementById('divModifyPrice'); if (document.getElementById('chkModifyPrice').checked) div.classList.remove('hidden'); else div.classList.add('hidden'); }
+    function toggleDiscountNote() { const div = document.getElementById('divDiscountNote'); if (document.getElementById('chkDiscountNote').checked) div.classList.remove('hidden'); else div.classList.add('hidden'); }
+
+    function openUnitModal(productId) { 
+        const product = productsData.find(p => p.id === productId); if (!product) return; 
+        currentSelectedProductId = productId; 
+        if(product.variants && product.variants.length > 0) { selectUnit(product.unit || 'Pcs'); } else { const unitName = product.unit || 'Pcs'; document.getElementById('modal1UnitName').innerText = unitName; document.getElementById('unitPriceLabel').innerText = '@1 ' + unitName + ' = ' + formatRupiah(product.price); document.getElementById('unitTypeModal').classList.remove('hidden'); }
+    }
+
+    function selectUnitDynamically() { const product = productsData.find(p => p.id === currentSelectedProductId); if (!product) return; selectUnit(product.unit || 'Pcs'); }
+    
+    function selectUnit(unitName) {
+      document.getElementById('unitTypeModal').classList.add('hidden'); const product = productsData.find(p => p.id === currentSelectedProductId); 
+      document.getElementById('qtyProductName').innerText = product.name; document.getElementById('qtyProductSku').innerText = product.id; 
+      const imageEl = document.getElementById('qtyProductImg'); imageEl.innerHTML = product.image ? '<img src="' + product.image + '" class="w-full h-full object-cover">' : '<span class="text-xs">Img</span>';
+      document.getElementById('chkModifyPrice').checked = false; document.getElementById('chkDiscountNote').checked = false; toggleModifyPrice(); toggleDiscountNote(); document.getElementById('inpDiscountVal').value = ''; 
+      const variantContainer = document.getElementById('modalVariantSelection'); const variantButtons = document.getElementById('modalVariantButtons');
+      if(product.variants && product.variants.length > 0) {
+          variantContainer.classList.remove('hidden'); variantButtons.innerHTML = '';
+          product.variants.forEach((v, index) => {
+              const btn = document.createElement('button'); btn.className = 'px-3 py-2 border rounded-xl text-sm font-bold transition shadow-sm focus:outline-none ' + (index === 0 ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'); btn.innerText = v.grade; btn.onclick = () => selectGrade(v.grade, v.price, btn); variantButtons.appendChild(btn);
+          });
+          selectGrade(product.variants[0].grade, product.variants[0].price, variantButtons.firstChild);
+      } else {
+          variantContainer.classList.add('hidden'); currentSelectedGrade = null; currentGradePrice = product.price;
+          const existingCartItem = cart.find(i => i.id === currentSelectedProductId && !i.grade);
+          document.getElementById('qtyProductPrice').innerText = formatRupiah(product.price); document.getElementById('inpTempPrice').value = existingCartItem ? existingCartItem.price : product.price; document.getElementById('inpItemNote').value = existingCartItem ? (existingCartItem.note || '') : '';
+          const initialQty = existingCartItem ? parseFloat(existingCartItem.qty.toFixed(2)) : 1; document.getElementById('modalQtyValue').value = initialQty;
+      }
+      document.getElementById('qtySelectedUnit').innerText = unitName; document.getElementById('qtyInputModal').classList.remove('hidden');
+    }
+
+    function selectGrade(grade, price, btnElement) {
+        currentSelectedGrade = grade; currentGradePrice = price;
+        document.querySelectorAll('#modalVariantButtons button').forEach(b => { b.className = 'px-3 py-2 border rounded-xl text-sm font-bold transition shadow-sm focus:outline-none bg-white text-gray-600 border-gray-300 hover:bg-gray-50'; });
+        btnElement.className = 'px-3 py-2 border rounded-xl text-sm font-bold transition shadow-sm focus:outline-none bg-emerald-500 text-white border-emerald-500';
+        document.getElementById('qtyProductPrice').innerText = formatRupiah(price); document.getElementById('inpTempPrice').value = price;
+        const cartItem = cart.find(i => i.id === currentSelectedProductId && i.grade === grade);
+        document.getElementById('modalQtyValue').value = cartItem ? parseFloat(cartItem.qty.toFixed(2)) : 1; document.getElementById('inpItemNote').value = cartItem ? (cartItem.note || '') : ''; if(cartItem) document.getElementById('inpTempPrice').value = cartItem.price; 
+    }
+
+    function adjustModalQty(delta) { const input = document.getElementById('modalQtyValue'); let val = parseFloat(input.value) || 0; val += delta; if (val < 0) val = 0; input.value = parseFloat(val.toFixed(2)); }
+    
+    function confirmModalQty() {
+      const input = document.getElementById('modalQtyValue'); const val = parseFloat(input.value) || 0; const product = productsData.find(p => p.id === currentSelectedProductId); 
+      const itemIndex = cart.findIndex(i => i.id === currentSelectedProductId && i.grade === currentSelectedGrade);
+      let finalPrice = currentGradePrice || product.price; const chkModify = document.getElementById('chkModifyPrice').checked; const chkDiscount = document.getElementById('chkDiscountNote').checked;
+      if (chkModify) { const tempP = parseFloat(document.getElementById('inpTempPrice').value); if (!isNaN(tempP)) finalPrice = tempP; }
+      if (chkDiscount) { const discVal = parseFloat(document.getElementById('inpDiscountVal').value); const discType = document.getElementById('selDiscountType').value; if (!isNaN(discVal)) { if (discType === '%') { finalPrice = finalPrice - (finalPrice * (discVal / 100)); } else { finalPrice = finalPrice - discVal; } } }
+      if (finalPrice < 0) finalPrice = 0; const itemNote = chkDiscount ? document.getElementById('inpItemNote').value : '';
+      
+      if (val > 0) { if (itemIndex > -1) { cart[itemIndex].qty = val; cart[itemIndex].price = finalPrice; cart[itemIndex].note = itemNote; } else { cart.push(Object.assign({}, product, {qty: val, price: finalPrice, note: itemNote, grade: currentSelectedGrade})); } } else { if (itemIndex > -1) cart.splice(itemIndex, 1); }
+      updateSystem(); closeModals();
+    }
+    
+    function openFeeModal() { document.getElementById('inpFeeName').value = ''; document.getElementById('inpFeeAmount').value = ''; document.getElementById('feeInputModal').classList.remove('hidden'); }
+    function closeFeeModal() { document.getElementById('feeInputModal').classList.add('hidden'); }
+    
+    function confirmFee() {
+        const name = document.getElementById('inpFeeName').value.trim(); const amount = parseFloat(document.getElementById('inpFeeAmount').value);
+        if(!name || isNaN(amount) || amount <= 0) { showToast('Nama dan nominal biaya wajib diisi!', 'error'); return; }
+        cart.push({ id: 'FEE-' + Date.now(), name: name, price: amount, basePrice: 0, qty: 1, unit: 'Biaya', isFee: true });
+        updateSystem(); renderCheckoutSummaryList(); closeFeeModal(); showToast('Biaya tambahan ditambahkan!', 'success');
+    }
+
+    function closeModals() { document.getElementById('unitTypeModal').classList.add('hidden'); document.getElementById('qtyInputModal').classList.add('hidden'); }
+    function changeQtyIdx(index, delta) { if (index < 0 || index >= cart.length) return; cart[index].qty += delta; if (cart[index].qty <= 0) cart.splice(index, 1); updateSystem(); }
+    function removeCartItemIdx(index) { if (index > -1) cart.splice(index, 1); updateSystem(); renderCheckoutSummaryList(); if (cart.length === 0) navigate('transaction'); }
+    
+    function updateSystem() {
+      const rawTotalItems = cart.filter(i => !i.isFee).reduce((sum, item) => sum + item.qty, 0); const totalItems = parseFloat(rawTotalItems.toFixed(2)); 
+      const badge = document.getElementById('cartCountBadge'); if (badge) badge.innerText = totalItems; renderGridPOS(productsData);
+      const cartList = document.getElementById('cartList'); const emptyMsg = document.getElementById('emptyCartMsg'); const btnCheckout = document.getElementById('btnCheckout'); const totalPaymentEl = document.getElementById('totalPayment');
+      if (!cartList || !emptyMsg || !btnCheckout || !totalPaymentEl) return;
+      cartList.innerHTML = ''; currentCheckoutTotal = 0;
+
+      if (cart.length === 0) { emptyMsg.style.display = 'block'; btnCheckout.disabled = true; } 
+      else {
+        emptyMsg.style.display = 'none'; btnCheckout.disabled = false;
+        cart.forEach((item, index) => {
+          currentCheckoutTotal += (item.price * item.qty); const formattedQty = parseFloat(item.qty.toFixed(2)); 
+          const originalProd = productsData.find(p=>p.id===item.id); let origPriceToCompare = item.price;
+          if (originalProd) { origPriceToCompare = originalProd.price; if(item.grade && originalProd.variants) { const vMatch = originalProd.variants.find(v => v.grade === item.grade); if(vMatch) origPriceToCompare = vMatch.price; } }
+          
+          const originalPriceHtml = (item.price !== origPriceToCompare) ? '<span class="line-through text-gray-400 mr-1">' + formatRupiah(origPriceToCompare) + '</span>' : ''; 
+          const noteHtml = item.note ? '<div class="text-[10px] text-amber-500 italic mt-0.5">*Catatan: ' + item.note + '</div>' : '';
+          const gradeBadge = item.grade ? '<span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 ml-1.5 align-middle">' + item.grade + '</span>' : '';
+          const feeBadge = item.isFee ? '<span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 ml-1.5 align-middle">Biaya Tambahan</span>' : '';
+
+          cartList.innerHTML += '<div class="flex justify-between items-center py-3 border-b border-gray-100"><div class="flex-1 pr-2"><h4 class="text-sm font-bold text-gray-800 leading-tight">' + item.name + gradeBadge + feeBadge + '</h4><div class="text-xs text-gray-500 mt-1">' + originalPriceHtml + formatRupiah(item.price) + ' x ' + formattedQty + ' ' + (item.unit || 'Pcs') + '</div>' + noteHtml + '</div><div class="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg p-1"><button onclick="changeQtyIdx(' + index + ', -0.5)" class="w-6 h-6 bg-white font-bold text-emerald-600 rounded shadow-sm hover:bg-emerald-50">-</button><span class="text-sm font-bold w-6 text-center">' + formattedQty + '</span><button onclick="changeQtyIdx(' + index + ', 0.5)" class="w-6 h-6 bg-white font-bold text-emerald-600 rounded shadow-sm hover:bg-emerald-50">+</button></div></div>';
+        });
+      }
+      totalPaymentEl.innerText = formatRupiah(currentCheckoutTotal);
+    }
+
+    function toggleCart() { const sheet = document.getElementById('cartSheet'); const overlay = document.getElementById('cartOverlay'); if (!sheet || !overlay) return; if(sheet.classList.contains('open')) { sheet.classList.remove('open'); setTimeout(() => overlay.classList.add('hidden'), 300); } else { overlay.classList.remove('hidden'); setTimeout(() => sheet.classList.add('open'), 10); } }
+    function clearCart() { cart = []; updateSystem(); toggleCart(); }
+
+    function goToCheckoutSummary() { if (cart.length === 0) return; toggleCart(); document.getElementById('checkoutSummaryTotal').innerText = formatRupiah(currentCheckoutTotal); renderCheckoutSummaryList(); navigate('checkout-summary'); }
+    
+    function renderCheckoutSummaryList() {
+       const listEl = document.getElementById('checkoutSummaryList'); if (!listEl) return; listEl.innerHTML = ''; let counter = 1;
+       cart.forEach((item, index) => { 
+          const qty = parseFloat(item.qty.toFixed(2)); const subtotal = item.price * item.qty; 
+          const originalProd = productsData.find(p=>p.id===item.id); let origPriceToCompare = item.price;
+          if (originalProd) { origPriceToCompare = originalProd.price; if(item.grade && originalProd.variants) { const vMatch = originalProd.variants.find(v => v.grade === item.grade); if(vMatch) origPriceToCompare = vMatch.price; } }
+          
+          const originalPriceHtml = (item.price !== origPriceToCompare) ? '<span class="line-through text-gray-400 mr-1">' + formatRupiah(origPriceToCompare) + '</span>' : '';
+          const gradeBadge = item.grade ? '<span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 ml-1.5 align-middle">' + item.grade + '</span>' : '';
+          const feeBadge = item.isFee ? '<span class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 ml-1.5 align-middle">Fee</span>' : '';
+          const iconType = item.isFee ? 'Fee' : 'Item';
+
+          listEl.innerHTML += '<div class="flex items-start py-4 border-b border-gray-100"><span class="font-bold text-gray-800 mr-3 mt-1">' + counter + '</span><div class="w-10 h-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full flex justify-center items-center font-bold text-xs mr-3">' + iconType + '</div><div class="flex-1"><h4 class="font-bold text-gray-800 leading-tight">' + item.name + gradeBadge + feeBadge + '</h4>' + (item.note ? '<p class="text-[10px] text-amber-500 italic mt-0.5">*Catatan: ' + item.note + '</p>' : '') + '<p class="text-xs text-gray-500 mt-1">' + originalPriceHtml + formatRupiah(item.price) + '</p><p class="text-xs text-gray-500">' + qty + ' ' + (item.unit || 'Pcs') + ' x ' + formatRupiah(item.price) + ' = <span class="font-bold text-gray-700">' + formatRupiah(subtotal) + '</span></p></div><button onclick="removeCartItemIdx(' + index + ')" class="text-red-500 p-2 hover:bg-red-50 rounded transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>'; 
+          counter++;
+       });
+       document.getElementById('checkoutSummaryTotal').innerText = formatRupiah(currentCheckoutTotal);
+    }
+    
+    function applyGlobalDiscount() {
+        const val = parseFloat(document.getElementById('inpGlobalDiscount').value) || 0;
+        const type = document.getElementById('selGlobalDiscountType').value;
+        let discountRp = 0;
+        
+        if(type === '%') { discountRp = currentCheckoutTotal * (val / 100); } else { discountRp = val; }
+        if(discountRp > currentCheckoutTotal) discountRp = currentCheckoutTotal;
+        
+        currentDiscountAmount = discountRp;
+        currentFinalTotal = currentCheckoutTotal - currentDiscountAmount;
+        document.getElementById('paymentHeaderTotal').innerHTML = formatRupiah(currentFinalTotal) + ' <svg class="w-5 h-5 ml-1 text-emerald-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+        
+        if(currentPaymentMethod === 'QRIS') { currentPaymentInput = currentFinalTotal.toString(); }
+        refreshPaymentUI();
+    }
+
+    function goToPayment() { 
+        document.getElementById('inpCustomerName').value = ""; document.getElementById('inpGlobalDiscount').value = ""; currentDiscountAmount = 0; currentFinalTotal = currentCheckoutTotal;
+        setPaymentMethod('Cash'); currentPaymentInput = "0"; 
+        document.getElementById('paymentHeaderTotal').innerHTML = formatRupiah(currentFinalTotal) + ' <svg class="w-5 h-5 ml-1 text-emerald-500 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'; 
+        refreshPaymentUI(); navigate('payment'); 
+    }
+
+    function setPaymentMethod(method) {
+        currentPaymentMethod = method; const btnCash = document.getElementById('btnMethCash'); const btnQris = document.getElementById('btnMethQris'); const keypadArea = document.getElementById('keypadArea'); const warning = document.getElementById('paymentWarning');
+        if(method === 'Cash') { btnCash.className = "flex-1 py-2.5 bg-emerald-500 text-white font-bold rounded-xl shadow-sm border-2 border-emerald-500 transition"; btnQris.className = "flex-1 py-2.5 bg-white text-gray-500 font-bold rounded-xl border-2 border-gray-200 hover:border-emerald-500 hover:text-emerald-500 transition"; keypadArea.style.display = 'block'; currentPaymentInput = "0"; } 
+        else { btnQris.className = "flex-1 py-2.5 bg-emerald-500 text-white font-bold rounded-xl shadow-sm border-2 border-emerald-500 transition"; btnCash.className = "flex-1 py-2.5 bg-white text-gray-500 font-bold rounded-xl border-2 border-gray-200 hover:border-emerald-500 hover:text-emerald-500 transition"; keypadArea.style.display = 'none'; currentPaymentInput = currentFinalTotal.toString(); warning.classList.add('hidden'); }
+        refreshPaymentUI();
+    }
+
+    function keypadType(key) { if (key === 'C') { currentPaymentInput = "0"; } else if (key === 'BACK') { currentPaymentInput = currentPaymentInput.slice(0, -1); if (currentPaymentInput === "") currentPaymentInput = "0"; } else if (key === 'AUTO') { currentPaymentInput = currentFinalTotal.toString(); } else { if (currentPaymentInput === "0" && key !== ".") { currentPaymentInput = key; } else { if (key === '.' && currentPaymentInput.includes('.')) return; if (currentPaymentInput.length < 12) currentPaymentInput += key; } } refreshPaymentUI(); }
+    
+    function refreshPaymentUI() { 
+        const payVal = parseFloat(currentPaymentInput) || 0; document.getElementById('displayPaymentAmount').innerText = formatRupiah(payVal); const warning = document.getElementById('paymentWarning'); const btnConfirm = document.getElementById('btnConfirmPayment'); 
+        if (payVal < currentFinalTotal && currentPaymentMethod === 'Cash') { warning.classList.remove('hidden'); btnConfirm.classList.replace('bg-emerald-500', 'bg-gray-200'); btnConfirm.disabled = true; } else { warning.classList.add('hidden'); btnConfirm.classList.replace('bg-gray-200', 'bg-emerald-500'); btnConfirm.disabled = false; } 
+    }
+    
+    function submitPayment() { 
+        currentPayVal = parseFloat(currentPaymentInput) || 0; if (currentPayVal < currentFinalTotal && currentPaymentMethod === 'Cash') return; 
+        
+        const customerName = document.getElementById('inpCustomerName').value.trim(); lastCustomerName = customerName; lastDiscountAmount = currentDiscountAmount;
+        const loader = document.getElementById('paymentLoader'); loader.classList.remove('hidden'); 
+        
+        callGAS('processCheckout', {cart: cart, totalSales: currentFinalTotal, cashierName: currentUser.name, customerName: customerName, discountAmount: currentDiscountAmount}, function(response) {
+            loader.classList.add('hidden'); 
+            if (response.status === 'success') { showSuccessScreen(currentPayVal); } 
+            else { showToast(response.message, "error"); }
+        });
+    }
+    
+    function showSuccessScreen(payVal) { lastPaymentMethod = currentPaymentMethod; const change = currentPaymentMethod === 'QRIS' ? 0 : (payVal - currentFinalTotal); document.getElementById('successChangeDisplay').innerText = formatRupiah(change); lastTransactionCart = JSON.parse(JSON.stringify(cart)); navigate('success'); }
+
+    function finishTransaction() { cart = []; currentCheckoutTotal = 0; currentFinalTotal = 0; currentDiscountAmount = 0; currentPaymentInput = "0"; lastCustomerName = ""; lastDiscountAmount = 0; updateSystem(); navigate('transaction'); loadProducts(); }
+
+    function sendReceiptToWhatsApp() {
+        let text = ""; const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        text += '*' + appSettings.storeName.toUpperCase() + '*\n';
+        if(appSettings.receiptHeader) { text += '_' + appSettings.receiptHeader.replace(/\n/g, ' ') + '_\n'; }
+        text += '--------------------------------\nWaktu: ' + new Date().toLocaleString('id-ID') + '\nKasir: ' + currentUser.name + '\n';
+        if(lastCustomerName) { text += 'Pelanggan: ' + lastCustomerName + '\n'; }
+        text += '--------------------------------\n';
+        let subtotalCart = 0;
+        lastTransactionCart.forEach(item => { const qty = parseFloat(item.qty.toFixed(2)); const unit = item.unit || 'Pcs'; const printName = item.name + (item.grade ? ' (' + item.grade + ')' : ""); text += '*' + printName + '*\n'; if(item.note) text += '  Catatan: ' + item.note + '\n'; text += qty + ' ' + unit + ' x ' + rpPrint(item.price) + ' = ' + rpPrint(qty * item.price) + '\n'; subtotalCart += (qty * item.price); });
+        text += '--------------------------------\n';
+        if(lastDiscountAmount > 0) { text += '*SUBTOTAL  : ' + rpPrint(subtotalCart) + '*\n'; text += '*DISKON    : -' + rpPrint(lastDiscountAmount) + '*\n'; }
+        text += '*TOTAL     : ' + rpPrint(currentFinalTotal) + '*\n';
+        if (lastPaymentMethod === 'Cash') { text += 'TUNAI     : ' + rpPrint(currentPayVal) + '\nKEMBALI   : ' + rpPrint(currentPayVal - currentFinalTotal) + '\n'; } else { text += 'PEMBAYARAN: QRIS\n'; }
+        text += '--------------------------------\n';
+        if(appSettings.receiptFooter) { text += '_' + appSettings.receiptFooter.replace(/\n/g, ' ') + '_\n'; }
+        text += '\n_Terima Kasih atas kunjungan Anda!_';
+        window.open('whatsapp://send?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function formatReceiptLine(leftStr, rightStr, maxLength) {
+        let left = String(leftStr); let right = String(rightStr);
+        let spaces = maxLength - left.length - right.length;
+        if (spaces <= 0) { left = left.substring(0, maxLength - right.length - 1); spaces = 1; }
+        let pad = ""; for(let i=0; i<spaces; i++) pad += " ";
+        return left + pad + right;
+    }
+
+    function formatCenterText(str, maxLength) { 
+        if(!str) return ""; let txt = String(str).trim(); 
+        if (txt.length >= maxLength) return txt.substring(0, maxLength); 
+        let padLeft = Math.floor((maxLength - txt.length) / 2); 
+        let pad = ""; for(let i=0; i<padLeft; i++) pad += " ";
+        return pad + txt; 
+    }
+
+    function previewReceipt() {
+        let text = ""; let paperCharLength = parseInt(appSettings.printerWidth); 
+        if (paperCharLength !== 32 && paperCharLength !== 48) paperCharLength = 32; 
+        const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        
+        let dashLine = "-".repeat(paperCharLength) + "\n";
+        text += formatCenterText(appSettings.storeName.toUpperCase(), paperCharLength) + "\n";
+        if(appSettings.receiptHeader) { appSettings.receiptHeader.split('\n').forEach(h => { text += formatCenterText(h, paperCharLength) + "\n"; }); }
+        text += dashLine; text += "Waktu: " + new Date().toLocaleString('id-ID') + "\nKasir: " + currentUser.name + "\n";
+        if (lastCustomerName) text += "Pelanggan: " + lastCustomerName + "\n";
+        text += dashLine;
+        
+        let subtotalCart = 0;
+        lastTransactionCart.forEach(item => { 
+            const qty = parseFloat(item.qty.toFixed(2)); const unit = item.unit || 'Pcs'; const printName = item.name + (item.grade ? ' (' + item.grade + ')' : "") + (item.isFee ? ' (Fee)' : ''); 
+            text += printName + "\n"; if(item.note) text += "  *" + item.note + "\n"; 
+            let leftText = qty + " " + unit + " x " + rpPrint(item.price); let rightText = rpPrint(qty * item.price); 
+            text += formatReceiptLine(leftText, rightText, paperCharLength) + "\n"; subtotalCart += (qty * item.price);
+        });
+        text += dashLine;
+        
+        if (lastDiscountAmount > 0) { text += formatReceiptLine("SUBTOTAL", rpPrint(subtotalCart), paperCharLength) + "\n"; text += formatReceiptLine("DISKON", "-" + rpPrint(lastDiscountAmount), paperCharLength) + "\n"; }
+        text += formatReceiptLine("TOTAL", rpPrint(currentFinalTotal), paperCharLength) + "\n";
+        
+        if (lastPaymentMethod === 'Cash') { text += formatReceiptLine("TUNAI", rpPrint(currentPayVal), paperCharLength) + "\n"; text += formatReceiptLine("KEMBALI", rpPrint(currentPayVal - currentFinalTotal), paperCharLength) + "\n"; } 
+        else { text += formatCenterText("DIBAYAR VIA QRIS", paperCharLength) + "\n"; }
+        text += dashLine;
+        
+        if(appSettings.receiptFooter) { appSettings.receiptFooter.split('\n').forEach(f => { text += formatCenterText(f, paperCharLength) + "\n"; }); }
+
+        const preEl = document.getElementById('previewReceiptContent'); preEl.innerText = text;
+        const qrisContainer = document.getElementById('previewQrisContainer');
+        if (lastPaymentMethod === 'QRIS' && appSettings.qrisImage) { document.getElementById('previewQrisImage').src = appSettings.qrisImage; qrisContainer.classList.remove('hidden'); } else { qrisContainer.classList.add('hidden'); }
+        document.getElementById('receiptPreviewModal').classList.remove('hidden');
+        const btnPrint = document.getElementById('btnModalPrint'); if(btnPrint) { btnPrint.onclick = function() { printReceiptRawBT(true); }; }
+    }
+
+    function closeReceiptPreview() { document.getElementById('receiptPreviewModal').classList.add('hidden'); }
+
+    function printReceiptRawBT(includePrice = true) {
+        let text = ""; let paperCharLength = parseInt(appSettings.printerWidth); 
+        if (paperCharLength !== 32 && paperCharLength !== 48) paperCharLength = 32;
+        const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        
+        let dashLine = "-".repeat(paperCharLength) + "\n"; text += formatCenterText(appSettings.storeName.toUpperCase(), paperCharLength) + "\n";
+        if(appSettings.receiptHeader) { appSettings.receiptHeader.split('\n').forEach(h => { text += formatCenterText(h, paperCharLength) + "\n"; }); }
+        text += dashLine + "Waktu: " + new Date().toLocaleString('id-ID') + "\nKasir: " + currentUser.name + "\n";
+        if (lastCustomerName) text += "Pelanggan: " + lastCustomerName + "\n";
+        text += dashLine;
+        
+        let subtotalCart = 0;
+        lastTransactionCart.forEach(item => {
+            const qty = parseFloat(item.qty.toFixed(2)); const unit = item.unit || 'Pcs'; const printName = item.name + (item.grade ? ' (' + item.grade + ')' : "") + (item.isFee ? ' (Fee)' : '');
+            if(includePrice) { text += printName + "\n"; if(item.note) text += "  *" + item.note + "\n"; let leftText = qty + " " + unit + " x " + rpPrint(item.price); let rightText = rpPrint(qty * item.price); text += formatReceiptLine(leftText, rightText, paperCharLength) + "\n"; subtotalCart += (qty * item.price); } else { text += qty + " " + unit + " " + printName + "\n"; if(item.note) text += "  *" + item.note + "\n"; }
+        });
+        text += dashLine;
+        
+        if (includePrice) {
+            if (lastDiscountAmount > 0) { text += formatReceiptLine("SUBTOTAL", rpPrint(subtotalCart), paperCharLength) + "\n"; text += formatReceiptLine("DISKON", "-" + rpPrint(lastDiscountAmount), paperCharLength) + "\n"; }
+            text += formatReceiptLine("TOTAL", rpPrint(currentFinalTotal), paperCharLength) + "\n";
+            if (lastPaymentMethod === 'Cash') { text += formatReceiptLine("TUNAI", rpPrint(currentPayVal), paperCharLength) + "\n" + formatReceiptLine("KEMBALI", rpPrint(currentPayVal - currentFinalTotal), paperCharLength) + "\n"; } else { text += formatCenterText("DIBAYAR VIA QRIS", paperCharLength) + "\n"; }
+            text += dashLine;
+        }
+        if(appSettings.receiptFooter) { appSettings.receiptFooter.split('\n').forEach(f => { text += formatCenterText(f, paperCharLength) + "\n"; }); } text += "\n\n";
+
+        if (includePrice && lastPaymentMethod === 'QRIS' && appSettings.qrisImage) {
+            let htmlStr = '<!DOCTYPE html><html><bo' + 'dy style="margin:0; padding:0; text-align:center; background:white;"><pre style="font-family: monospace; font-size: 22px; text-align: left; margin:0; line-height: 1.2;">' + text + '</pre><div style="margin-top: 10px;"><img src="' + appSettings.qrisImage + '" style="width: 80%; max-width: 350px;"></div><p style="font-family: monospace; font-size: 20px; font-weight: bold; margin-top:5px;">SCAN UNTUK MEMBAYAR</p><br><br></bo' + 'dy></ht' + 'ml>';
+            const base64 = btoa(unescape(encodeURIComponent(htmlStr))); window.location.href = "rawbt:data:text/html;base64," + base64;
+        } else {
+            const base64 = btoa(unescape(encodeURIComponent(text))); window.location.href = "rawbt:data:text/plain;base64," + base64;
+        }
+    }
+
+    function generatePastReceiptText(trxId, paperCharLength = 32) {
+        let selectedTrx = null; 
+        for (let i = 0; i < globalDailyData.length; i++) { if (globalDailyData[i].dailyTrxList) { selectedTrx = globalDailyData[i].dailyTrxList.find(t => t.id === trxId); if (selectedTrx) break; } }
+        if (!selectedTrx) return null;
+        
+        let text = ""; const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let dashLine = "-".repeat(paperCharLength) + "\n"; 
+        text += formatCenterText(appSettings.storeName.toUpperCase(), paperCharLength) + "\n" + formatCenterText("** COPY / REPRINT **", paperCharLength) + "\n";
+        if(appSettings.receiptHeader) appSettings.receiptHeader.split('\n').forEach(h => { text += formatCenterText(h, paperCharLength) + "\n"; });
+        
+        text += dashLine + "Waktu: " + selectedTrx.date + "\nKasir: " + selectedTrx.cashier + "\nID   : " + selectedTrx.id + "\n";
+        if (selectedTrx.customer) text += "Pelanggan: " + selectedTrx.customer + "\n";
+        text += dashLine;
+        
+        let subtotalCart = 0;
+        if (selectedTrx.items && selectedTrx.items.length > 0) { 
+            selectedTrx.items.forEach(item => { const qty = parseFloat(item.qty).toFixed(2).replace('.00', ''); text += item.name + "\n"; let subtotalPrice = item.subtotal ? item.subtotal : (item.qty * item.price); subtotalCart += subtotalPrice; text += formatReceiptLine(qty + " x " + rpPrint(item.price), rpPrint(subtotalPrice), paperCharLength) + "\n"; }); 
+        } else { text += formatCenterText("Detail item tidak tersedia", paperCharLength) + "\n"; }
+        text += dashLine;
+        if (selectedTrx.discount > 0) { text += formatReceiptLine("SUBTOTAL", rpPrint(subtotalCart), paperCharLength) + "\n"; text += formatReceiptLine("DISKON", "-" + rpPrint(selectedTrx.discount), paperCharLength) + "\n"; }
+        text += formatReceiptLine("TOTAL", rpPrint(selectedTrx.total), paperCharLength) + "\n" + dashLine;
+        if(appSettings.receiptFooter) { appSettings.receiptFooter.split('\n').forEach(f => { text += formatCenterText(f, paperCharLength) + "\n"; }); } text += "\n\n";
+        return text;
+    }
+
+    function reprintTransaction(trxId) {
+        let paperCharLength = parseInt(appSettings.printerWidth); if (paperCharLength !== 32 && paperCharLength !== 48) paperCharLength = 32; 
+        let text = generatePastReceiptText(trxId, paperCharLength);
+        if (!text) { showToast("Data transaksi tidak ditemukan", "error"); return; }
+        const base64 = btoa(unescape(encodeURIComponent(text))); window.location.href = "rawbt:data:text/plain;base64," + base64;
+    }
+
+    function previewPastReceipt(trxId) {
+        let paperCharLength = parseInt(appSettings.printerWidth); if (paperCharLength !== 32 && paperCharLength !== 48) paperCharLength = 32;
+        let text = generatePastReceiptText(trxId, paperCharLength);
+        if(!text) { showToast("Data transaksi tidak ditemukan", "error"); return; }
+        document.getElementById('previewReceiptContent').innerText = text; document.getElementById('previewQrisContainer').classList.add('hidden'); 
+        const btnPrint = document.getElementById('btnModalPrint'); if(btnPrint) { btnPrint.onclick = function() { reprintTransaction(trxId); }; }
+        document.getElementById('receiptPreviewModal').classList.remove('hidden');
+    }
+
+    function waPastReceipt(trxId) {
+        let selectedTrx = null; for (let i = 0; i < globalDailyData.length; i++) { if (globalDailyData[i].dailyTrxList) { selectedTrx = globalDailyData[i].dailyTrxList.find(t => t.id === trxId); if (selectedTrx) break; } }
+        if (!selectedTrx) { showToast("Data transaksi tidak ditemukan", "error"); return; }
+
+        let text = ""; const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        text += '*' + appSettings.storeName.toUpperCase() + '*\n--------------------------------\n*REPRINT TRANSAKSI*\nWaktu: ' + selectedTrx.date + '\nKasir: ' + selectedTrx.cashier + '\nID: ' + selectedTrx.id + '\n';
+        if (selectedTrx.customer) text += 'Pelanggan: ' + selectedTrx.customer + '\n'; text += '--------------------------------\n';
+        let subtotalCart = 0;
+        if (selectedTrx.items && selectedTrx.items.length > 0) { selectedTrx.items.forEach(item => { const qty = parseFloat(item.qty).toFixed(2).replace('.00', ''); text += '*' + item.name + '*\n'; let subtotalPrice = item.subtotal ? item.subtotal : (item.qty * item.price); subtotalCart += subtotalPrice; text += qty + ' x ' + rpPrint(item.price) + ' = ' + rpPrint(subtotalPrice) + '\n'; }); } else { text += 'Detail item tidak tersedia\n'; }
+        text += '--------------------------------\n';
+        if (selectedTrx.discount > 0) { text += '*SUBTOTAL  : ' + rpPrint(subtotalCart) + '*\n*DISKON    : -' + rpPrint(selectedTrx.discount) + '*\n'; }
+        text += '*TOTAL     : ' + rpPrint(selectedTrx.total) + '*\n--------------------------------\n\n_Terima Kasih atas kunjungan Anda!_';
+        window.open('whatsapp://send?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function deleteTransaction(trxId) {
+        if(!confirm("Yakin ingin menghapus transaksi " + trxId + "?")) return;
+        showToast("Menghapus transaksi...");
+        callGAS('deleteTrx', {trxId: trxId}, res => {
+            if(res.status === 'success') { showToast("Transaksi dihapus!", "success"); fetchAnalytics('transaction', 'daily'); } 
+            else { showToast(res.message, "error"); }
+        });
+    }
+
+    function testPrintRawBT() {
+        let paperCharLength = parseInt(appSettings.printerWidth); if (paperCharLength !== 32 && paperCharLength !== 48) paperCharLength = 32;
+        let text = ""; const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        let dashLine = "-".repeat(paperCharLength) + "\n"; 
+        text += formatCenterText("TEST PRINT BERHASIL!", paperCharLength) + "\n" + dashLine + formatCenterText("KASIR AMP SYSTEM", paperCharLength) + "\n" + formatCenterText("Koneksi Printer Bluetooth OK", paperCharLength) + "\n" + formatCenterText("Tipe Kertas: " + (paperCharLength === 32 ? "58mm" : "80mm"), paperCharLength) + "\n" + dashLine + formatReceiptLine("Item Test (1 Pcs)", rpPrint(1000), paperCharLength) + "\n" + formatReceiptLine("TOTAL", rpPrint(1000), paperCharLength) + "\n" + dashLine + "\n\n";
+        const base64 = btoa(unescape(encodeURIComponent(text))); window.location.href = "rawbt:data:text/plain;base64," + base64;
+    }
+
+    function loadStaffData() { 
+        const loader = document.getElementById('loadingStaff'); const container = document.getElementById('staffListContainer'); loader.classList.remove('hidden'); container.innerHTML = '';
+        callGAS('getStaffList', {}, function(res) {
+            loader.classList.add('hidden');
+            if(res.status === 'success') {
+                res.data.forEach(staff => {
+                    const initial = staff.name.substring(0,1).toUpperCase(); const roleColor = staff.role === 'Owner' ? 'text-blue-600 bg-blue-100 border-blue-200' : 'text-emerald-600 bg-emerald-100 border-emerald-200';
+                    container.innerHTML += '<div class="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-100"><div class="flex items-center space-x-4"><div class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-sm border ' + roleColor + '">' + initial + '</div><div><h3 class="font-bold text-gray-800 text-sm">' + staff.name + '</h3><p class="text-[10px] text-gray-500 mt-0.5">' + staff.email + '</p><div class="mt-1 inline-block ' + roleColor.replace('bg-','bg-opacity-50 bg-').replace('border-','border-opacity-50 border-') + ' text-[10px] font-bold px-2 py-0.5 rounded border">' + staff.role + '</div></div></div></div>';
+                });
+            } else { showToast(res.message, 'error'); }
+        });
+    }
+
+    function openAddStaff() { document.getElementById('frmStaffName').value = ''; document.getElementById('frmStaffEmail').value = ''; document.getElementById('frmStaffPassword').value = ''; document.getElementById('frmStaffRole').value = 'Kasir'; navigate('add-staff'); }
+
+    function submitStaff() {
+        const name = document.getElementById('frmStaffName').value; const email = document.getElementById('frmStaffEmail').value; const password = document.getElementById('frmStaffPassword').value; const role = document.getElementById('frmStaffRole').value;
+        if(!name || !email || !password) { showToast('Semua kolom wajib diisi!', 'error'); return; }
+        const btn = document.getElementById('btnSaveStaff'); const loader = document.getElementById('saveStaffLoader'); const text = document.getElementById('btnSaveStaffText'); btn.disabled = true; loader.classList.remove('hidden'); text.innerText = 'MENYIMPAN...';
+        
+        callGAS('addStaff', {payload: { name, email, password, role }}, function(res) {
+            btn.disabled = false; loader.classList.add('hidden'); text.innerText = 'SIMPAN';
+            if(res.status === 'success') { showToast(res.message, 'success'); loadStaffData(); navigate('staff'); } else { showToast(res.message, 'error'); }
+        });
+    }
+
+    let txChartInstance = null; let currentProdData = []; let globalDailyData = []; 
+
+    function openAnalytics(type) { navigate('analytics-' + type); fetchAnalytics(type, 'daily'); }
+
+    function fetchAnalytics(type, period) {
+       if (type === 'transaction') {
+          ['daily', 'monthly', 'yearly'].forEach(p => { let btn = document.getElementById('tabTx-' + p); if(btn) { if(p === period) { btn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-emerald-500 text-white transition"; } else { btn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition"; } } });
+       } else if (type === 'product') {
+          ['daily', 'monthly', 'yearly', 'custom'].forEach(p => { let tab = document.getElementById('tabProd-' + p); if(tab) { if(p === period) { tab.classList.add('bg-emerald-600'); tab.classList.remove('hover:bg-emerald-600'); } else { tab.classList.remove('bg-emerald-600'); tab.classList.add('hover:bg-emerald-600'); } } });
+       }
+       const listContainer = document.getElementById(type === 'transaction' ? 'txReportList' : 'prodReportList'); listContainer.innerHTML = '<div class="flex justify-center items-center py-10"><div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-8 w-8"></div></div>';
+       
+       callGAS('getAnalyticsData', {type: type, periodType: period}, function(response) {
+           if(response.status === 'success') { if(type === 'transaction') renderTxAnalytics(response.data, period); else { currentProdData = response.data; renderProdAnalyticsUI(currentProdData); } } else { listContainer.innerHTML = '<div class="p-5 text-center text-red-500">' + response.message + '</div>'; }
+       });
+    }
+
+    function renderTxAnalytics(data, period) {
+        const listContainer = document.getElementById('txReportList'); listContainer.innerHTML = '';
+        let sumCount = 0; let sumIncome = 0; data.forEach(d => { sumCount += d.trxCount; sumIncome += d.totalSales; });
+        document.getElementById('txSumCount').innerText = sumCount; document.getElementById('txSumIncome').innerText = formatRupiah(sumIncome);
+        if(data.length === 0) { listContainer.innerHTML = '<div class="text-center text-gray-400 py-10">Report is empty</div>'; if (txChartInstance) { txChartInstance.data.labels=[]; txChartInstance.data.datasets[0].data=[]; txChartInstance.update(); } return; }
+        const labels = data.map(d => d.period); const salesData = data.map(d => d.totalSales); const ctx = document.getElementById('txChartCanvas').getContext('2d');
+        if (txChartInstance) txChartInstance.destroy();
+        txChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Income', data: salesData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, display: false }, x: { grid: {display: false} } }, layout: { padding: {left: 10, right: 10, top: 10, bottom: 0} } } });
+        if (period === 'daily') {
+            globalDailyData = data;
+            data.slice().reverse().forEach(d => {
+                if(d.dailyTrxList && d.dailyTrxList.length > 0) {
+                    d.dailyTrxList.slice().reverse().forEach(trx => { listContainer.innerHTML += '<div class="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white hover:bg-gray-50 space-y-2 sm:space-y-0"><div><div class="text-xs font-bold text-gray-800">' + trx.id + '</div><div class="text-[10px] text-gray-500">' + trx.time + ' • ' + trx.cashier + '</div></div><div class="flex items-center w-full sm:w-auto justify-between sm:justify-end space-x-3"><div class="text-sm font-bold text-emerald-600 mr-2">' + formatRupiah(trx.total) + '</div><div class="flex space-x-1"><button onclick="previewPastReceipt(\'' + trx.id + '\')" class="p-1.5 bg-blue-50 text-blue-500 rounded hover:bg-blue-100 border border-blue-100 transition" title="Preview Struk"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button><button onclick="waPastReceipt(\'' + trx.id + '\')" class="p-1.5 bg-emerald-50 text-emerald-500 rounded hover:bg-emerald-100 border border-emerald-100 transition" title="Kirim WhatsApp"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></button><button onclick="reprintTransaction(\'' + trx.id + '\')" class="p-1.5 bg-gray-50 text-gray-500 rounded hover:bg-gray-200 border border-gray-200 transition" title="Cetak Ulang"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button><button onclick="deleteTransaction(\'' + trx.id + '\')" class="p-1.5 bg-red-50 text-red-500 rounded hover:bg-red-100 border border-red-100 transition" title="Hapus Transaksi"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div></div>'; });
+                } else { listContainer.innerHTML += '<div class="text-center text-xs text-gray-400 py-3">Tidak ada detail transaksi.</div>'; }
+            });
+        } else {
+            data.slice().reverse().forEach(d => { 
+                let initial = d.period.length === 4 ? d.period : d.period.split(' ')[0].substring(0,3);
+                listContainer.innerHTML += '<div onclick="showPeriodTransactions(\'' + d.period + '\')" class="px-4 py-3 flex justify-between items-center border-b border-gray-100 cursor-pointer hover:bg-emerald-50 transition"><div class="flex items-center space-x-3"><div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-bold">' + initial + '</div><div><div class="text-[11px] font-bold text-gray-800 uppercase">' + d.period + '</div><div class="text-xs text-gray-500 font-medium">' + d.trxCount + ' Transaksi</div></div></div><div class="text-right flex items-center space-x-2"><div><div class="text-[10px] text-gray-400">Pendapatan</div><div class="font-bold text-emerald-600 text-sm">' + formatRupiah(d.totalSales) + '</div></div><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div></div>'; 
             });
         }
+    }
+
+    let currentPeriodData = [];
+
+    function showPeriodTransactions(periodStr) {
+        const listContainer = document.getElementById('txReportList');
+        listContainer.innerHTML = '<div class="flex justify-center items-center py-10"><div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-8 w-8"></div></div>';
+        
+        callGAS('getTrxDetailByPeriod', {periodStr: periodStr}, function(response) {
+            if(response.status === 'success') { processDrillDown(response.data, periodStr); } 
+            else { listContainer.innerHTML = '<div class="p-5 text-center text-red-500">' + response.message + '</div>'; }
+        });
+    }
+
+    function processDrillDown(trxList, periodStr) {
+        currentPeriodData = trxList;
+        if (periodStr.length === 4) {
+            let grouped = {}; let months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            trxList.forEach(trx => {
+                let monthStr = "Bulan"; let datePart = trx.date.split(' ')[0].replace(',', '');
+                if(datePart.includes('/')) { let mIdx = parseInt(datePart.split('/')[1]) - 1; monthStr = months[mIdx] + " " + datePart.split('/')[2]; } 
+                else { monthStr = "Mei " + periodStr; } 
+                
+                if(!grouped[monthStr]) grouped[monthStr] = { period: monthStr, totalSales: 0, trxCount: 0, isMonth: true };
+                grouped[monthStr].totalSales += trx.total; grouped[monthStr].trxCount++;
+            });
+            renderGroupedView(Object.values(grouped), periodStr, 'yearly');
+        } else {
+            let grouped = {};
+            trxList.forEach(trx => {
+                let datePart = trx.date.split(' ')[0].replace(',', '');
+                if(!grouped[datePart]) grouped[datePart] = { period: datePart, totalSales: 0, trxCount: 0, isDay: true };
+                grouped[datePart].totalSales += trx.total; grouped[datePart].trxCount++;
+            });
+            renderGroupedView(Object.values(grouped), periodStr, 'monthly');
+        }
+    }
+
+    function renderGroupedView(data, parentPeriod, parentType) {
+        const listContainer = document.getElementById('txReportList');
+        listContainer.innerHTML = '<div class="px-4 py-2 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between cursor-pointer text-emerald-700 font-bold text-xs" onclick="fetchAnalytics(\'transaction\', \'' + parentType + '\')"><div class="flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Kembali ke Summary</div><div class="uppercase">' + parentPeriod + '</div></div>';
+        
+        if(data.length === 0) { listContainer.innerHTML += '<div class="text-center text-xs text-gray-400 py-6">Tidak ada transaksi.</div>'; return; }
+
+        data.forEach(d => {
+            let initial = d.isDay ? d.period.split('/')[0] : d.period.split(' ')[0].substring(0,3);
+            let onClickFn = d.isDay ? `showDayTransactions('${d.period}', '${parentPeriod}')` : `showPeriodTransactions('${d.period}')`;
+            listContainer.innerHTML += '<div onclick="' + onClickFn + '" class="px-4 py-3 flex justify-between items-center border-b border-gray-100 cursor-pointer hover:bg-emerald-50 transition"><div class="flex items-center space-x-3"><div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-bold">' + initial + '</div><div><div class="text-[11px] font-bold text-gray-800 uppercase">' + d.period + '</div><div class="text-xs text-gray-500 font-medium">' + d.trxCount + ' Transaksi</div></div></div><div class="text-right flex items-center space-x-2"><div><div class="text-[10px] text-gray-400">Pendapatan</div><div class="font-bold text-emerald-600 text-sm">' + formatRupiah(d.totalSales) + '</div></div><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div></div>';
+        });
+    }
+
+    function showDayTransactions(dayStr, parentPeriod) {
+        let dayTrx = currentPeriodData.filter(t => t.date.includes(dayStr)); renderPeriodDetailView(dayTrx, dayStr, parentPeriod);
+    }
+
+    function renderPeriodDetailView(trxList, currentLabel, backPeriod) {
+        const listContainer = document.getElementById('txReportList');
+        let backAction = backPeriod ? `showPeriodTransactions('${backPeriod}')` : `fetchAnalytics('transaction', 'daily')`;
+        
+        listContainer.innerHTML = '<div class="px-4 py-2 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between cursor-pointer text-emerald-700 font-bold text-xs" onclick="' + backAction + '"><div class="flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Kembali</div><div class="uppercase">' + currentLabel + '</div></div>';
+        
+        globalDailyData = [{ dailyTrxList: trxList }]; 
+        if(trxList.length === 0) { listContainer.innerHTML += '<div class="text-center text-xs text-gray-400 py-6">Tidak ada detail transaksi.</div>'; return; }
+
+        trxList.slice().reverse().forEach(trx => {
+            listContainer.innerHTML += '<div class="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white hover:bg-gray-50 space-y-2 sm:space-y-0"><div><div class="text-xs font-bold text-gray-800">' + trx.id + '</div><div class="text-[10px] text-gray-500">' + trx.date + ' • ' + trx.cashier + '</div></div><div class="flex items-center w-full sm:w-auto justify-between sm:justify-end space-x-3"><div class="text-sm font-bold text-emerald-600 mr-2">' + formatRupiah(trx.total) + '</div><div class="flex space-x-1"><button onclick="previewPastReceipt(\'' + trx.id + '\')" class="p-1.5 bg-blue-50 text-blue-500 rounded hover:bg-blue-100 border border-blue-100 transition" title="Preview Struk"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button><button onclick="waPastReceipt(\'' + trx.id + '\')" class="p-1.5 bg-emerald-50 text-emerald-500 rounded hover:bg-emerald-100 border border-emerald-100 transition" title="Kirim WhatsApp"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></button><button onclick="reprintTransaction(\'' + trx.id + '\')" class="p-1.5 bg-gray-50 text-gray-500 rounded hover:bg-gray-200 border border-gray-200 transition" title="Cetak Ulang"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button><button onclick="deleteTransaction(\'' + trx.id + '\')" class="p-1.5 bg-red-50 text-red-500 rounded hover:bg-red-100 border border-red-100 transition" title="Hapus Transaksi"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div></div>';
+        });
+    }
+
+    function openCustomDateModal() { document.getElementById('modalCustomDateProduct').classList.remove('hidden'); }
+
+    function applyCustomDate() {
+       const start = document.getElementById('inpStartDate').value; const end = document.getElementById('inpEndDate').value;
+       if(!start || !end) { showToast("Harap pilih tanggal mulai dan selesai!", "error"); return; }
+       document.getElementById('modalCustomDateProduct').classList.add('hidden');
+       const listContainer = document.getElementById('prodReportList'); listContainer.innerHTML = '<div class="flex justify-center items-center py-10"><div class="loader ease-linear rounded-full border-4 border-t-4 border-emerald-500 h-8 w-8"></div></div>';
+       
+       callGAS('getAnalyticsData', {type: 'product', periodType: 'custom', customStart: start, customEnd: end}, function(response) {
+           if(response.status === 'success') { currentProdData = response.data; renderProdAnalyticsUI(currentProdData); } 
+           else { listContainer.innerHTML = '<div class="p-5 text-center text-red-500">' + response.message + '</div>'; }
+       });
+    }
+
+    function filterProductSalesUI() { const query = document.getElementById('inpSearchProdSales').value.toLowerCase(); const filteredData = currentProdData.filter(p => p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query)); renderProdAnalyticsUI(filteredData, true); }
+
+    function renderProdAnalyticsUI(data, isFiltering = false) {
+        const listContainer = document.getElementById('prodReportList'); listContainer.innerHTML = '';
+        if(!isFiltering) { let sumQty = 0; let sumIncome = 0; data.forEach(d => { sumQty += d.qty; sumIncome += d.revenue; }); document.getElementById('prodSumQty').innerText = parseFloat(sumQty.toFixed(2)); document.getElementById('prodSumIncome').innerText = formatRupiah(sumIncome); }
+        if(data.length === 0) { listContainer.innerHTML = '<div class="text-center text-gray-400 py-10">Report is empty</div>'; return; }
+        data.sort((a,b) => b.qty - a.qty).forEach(item => {
+            const initial = item.name.substring(0, 2).toUpperCase();
+            listContainer.innerHTML += '<div class="flex items-center px-4 py-4 border-b border-gray-100 bg-white hover:bg-gray-50 transition cursor-default"><div class="w-12 h-12 bg-gray-100 rounded text-gray-300 font-extrabold flex items-center justify-center text-xl mr-4 flex-shrink-0 border border-gray-200">' + initial + '</div><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-sm text-gray-800 truncate leading-tight">' + item.name + '</div><div class="flex space-x-6 mt-1.5"><div><div class="text-[10px] text-gray-500 mb-0.5">Profit</div><div class="font-bold text-xs text-gray-800">' + formatRupiah(item.revenue) + '</div></div><div><div class="text-[10px] text-gray-500 mb-0.5">Income</div><div class="font-bold text-xs text-gray-800">' + formatRupiah(item.revenue) + '</div></div></div></div><div class="border border-gray-300 rounded px-2.5 py-1 text-sm font-bold text-gray-700 flex-shrink-0 bg-white">' + parseFloat(item.qty.toFixed(2)) + '</div></div>';
+        });
+    }
     </script>
 </body>
 </html>
