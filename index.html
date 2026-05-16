@@ -1471,7 +1471,7 @@
         
         let text = ""; const rpPrint = (num) => 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         let dashLine = "-".repeat(paperCharLength) + "\n"; 
-        text += formatCenterText(appSettings.storeName.toUpperCase(), paperCharLength) + "\n" + formatCenterText("** COPY / REPRINT **", paperCharLength) + "\n";
+        text += formatCenterText(appSettings.storeName.toUpperCase(), paperCharLength) + "\n" +  "\n";
         if(appSettings.receiptHeader) appSettings.receiptHeader.split('\n').forEach(h => { text += formatCenterText(h, paperCharLength) + "\n"; });
         
         text += dashLine + "Waktu: " + selectedTrx.date + "\nKasir: " + selectedTrx.cashier + "\nID   : " + selectedTrx.id + "\n";
