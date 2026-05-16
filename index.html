@@ -369,15 +369,15 @@
        <div class="flex-1 overflow-y-auto px-4 py-5 pb-24 space-y-4">
           <div onclick="openAnalytics('transaction')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
              <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-                <span class="font-bold text-gray-800 text-sm">Sales Transaction (Omzet)</span>
+                 <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                 <span class="font-bold text-gray-800 text-sm">Sales Transaction (Omzet)</span>
              </div>
              <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
           </div>
           <div onclick="openAnalytics('product')" class="bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition">
              <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
-                <span class="font-bold text-gray-800 text-sm">Product Sales (Kuantitas)</span>
+                 <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
+                 <span class="font-bold text-gray-800 text-sm">Product Sales (Kuantitas)</span>
              </div>
              <svg class="w-5 h-5 text-gray-800 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
           </div>
@@ -528,7 +528,10 @@
          </div>
       </div>
       <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
-         <button onclick="saveProfileSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SIMPAN PROFIL</button>
+         <button id="btnSaveProfile" onclick="saveProfileSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg flex justify-center items-center">
+            <span id="txtSaveProfile">SIMPAN PROFIL</span>
+            <div id="loaderProfile" class="loader border-white h-5 w-5 ml-2 hidden"></div>
+         </button>
       </div>
     </div>
 
@@ -551,29 +554,17 @@
             </div>
          </div>
          <div class="px-4 py-4">
-            <h3 class="text-sm font-bold text-gray-600 mb-3">Store Data</h3>
+            <h3 class="text-sm font-bold text-gray-600 mb-3">Data Detail Toko</h3>
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-               <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Nama Toko</label>
-                  <input type="text" id="inpStoreName" value="Kasir AMP" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
-               </div>
-               <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Tagline / Slogan</label>
-                  <input type="text" id="inpStoreTagline" placeholder="Cth: Belanja Murah & Lengkap" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
-               </div>
-               <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">No. WhatsApp / Telepon</label>
-                  <input type="text" id="inpStorePhone" placeholder="08..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500">
-               </div>
-               <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">Alamat Lengkap</label>
-                  <textarea id="inpStoreAddress" rows="3" placeholder="Alamat detail toko..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></textarea>
-               </div>
+               <div><label class="block text-xs font-medium text-gray-500 mb-1">Nama Toko</label><input type="text" id="inpStoreName" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></div>
+               <div><label class="block text-xs font-medium text-gray-500 mb-1">Slogan / Tagline</label><input type="text" id="inpStoreTagline" placeholder="Cth: Berkualitas & Terpercaya" class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></div>
+               <div><label class="block text-xs font-medium text-gray-500 mb-1">No. WhatsApp Toko</label><input type="text" id="inpStorePhone" placeholder="08..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></div>
+               <div><label class="block text-xs font-medium text-gray-500 mb-1">Alamat Detail Toko</label><textarea id="inpStoreAddress" rows="3" placeholder="Alamat lengkap..." class="w-full border border-gray-300 rounded-lg p-3 text-sm font-bold text-gray-800 outline-none focus:border-emerald-500"></textarea></div>
             </div>
          </div>
       </div>
       <div class="absolute bottom-0 w-full p-4 bg-white border-t border-gray-100 z-40">
-         <button onclick="saveStoreSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SAVE</button>
+         <button onclick="saveStoreSettings()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl hover:bg-emerald-600 transition shadow-md tracking-widest text-lg">SIMPAN TOKO</button>
       </div>
     </div>
 
@@ -1028,10 +1019,10 @@
        const file = event.target.files[0]; if(!file) return; 
        const reader = new FileReader(); reader.onload = function(e) { 
            const img = new Image(); img.onload = function() { 
-               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 200; let width = img.width; let height = img.height; 
+               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 400; let width = img.width; let height = img.height; 
                if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
-               currentImageBase64 = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('storeLogoPreview').src = currentImageBase64; document.getElementById('storeLogoPreview').classList.remove('hidden'); document.getElementById('storeLogoPlaceholder').classList.add('hidden'); 
+               currentImageBase64 = canvas.toDataURL('image/jpeg', 0.9); document.getElementById('storeLogoPreview').src = currentImageBase64; document.getElementById('storeLogoPreview').classList.remove('hidden'); document.getElementById('storeLogoPlaceholder').classList.add('hidden'); 
            }; img.src = e.target.result; 
        }; reader.readAsDataURL(file);
     }
@@ -1042,10 +1033,10 @@
        const file = event.target.files[0]; if(!file) return; 
        const reader = new FileReader(); reader.onload = function(e) { 
            const img = new Image(); img.onload = function() { 
-               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 400; let width = img.width; let height = img.height; 
+               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 800; let width = img.width; let height = img.height; 
                if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
                canvas.width = width; canvas.height = height; ctx.fillStyle = "white"; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height); 
-               currentQrisBase64 = canvas.toDataURL('image/jpeg', 0.8); document.getElementById('qrisPreview').src = currentQrisBase64; document.getElementById('qrisPreview').classList.remove('hidden'); document.getElementById('qrisPlaceholder').classList.add('hidden'); document.getElementById('btnClearQris').classList.remove('hidden'); 
+               currentQrisBase64 = canvas.toDataURL('image/jpeg', 0.9); document.getElementById('qrisPreview').src = currentQrisBase64; document.getElementById('qrisPreview').classList.remove('hidden'); document.getElementById('qrisPlaceholder').classList.add('hidden'); document.getElementById('btnClearQris').classList.remove('hidden'); 
            }; img.src = e.target.result; 
        }; reader.readAsDataURL(file);
     }
@@ -1144,10 +1135,13 @@
         const file = event.target.files[0]; if(!file) return; 
         const reader = new FileReader(); reader.onload = function(e) { 
             const img = new Image(); img.onload = function() { 
-                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 400; const MAX_HEIGHT = 400; let width = img.width; let height = img.height; 
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); 
+                const MAX_WIDTH = 600; const MAX_HEIGHT = 600; 
+                let width = img.width; let height = img.height; 
                 if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } 
                 canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
-                currentImageBase64 = canvas.toDataURL('image/jpeg', 0.8); document.getElementById('imagePreview').src = currentImageBase64; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); 
+                currentImageBase64 = canvas.toDataURL('image/jpeg', 0.9); 
+                document.getElementById('imagePreview').src = currentImageBase64; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); 
             }; img.src = e.target.result; 
         }; reader.readAsDataURL(file); 
     }
