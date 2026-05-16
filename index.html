@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Kasir AMP - Mobile Kasir</title>
   
-  <!-- JIKA INGIN MEMBUAT PWA, TAMBAHKAN MANIFEST.JSON ANDA DI SINI NANTI -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#10b981">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1055/1055661.png">
@@ -384,21 +383,18 @@
        </div>
     </div>
 
-    <!-- VIEW: TRANSACTION ANALYTICS (CUSTOM DESIGN) -->
+    <!-- VIEW: TRANSACTION ANALYTICS -->
     <div id="view-analytics-transaction" class="app-view bg-white">
        <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10">
           <button onclick="navigate('report-menu')" class="text-black font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
           <h1 class="text-base font-bold text-emerald-600 ml-4" id="txReportTitle">Transaction Report</h1>
        </div>
        <div class="flex-1 overflow-y-auto">
-          <!-- Filter Tabs -->
           <div class="flex justify-between space-x-2 bg-gray-100 p-1 mx-4 mt-4 rounded-xl mb-4">
              <button id="tabTx-daily" onclick="fetchAnalytics('transaction', 'daily')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Day</button>
              <button id="tabTx-monthly" onclick="fetchAnalytics('transaction', 'monthly')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Month</button>
              <button id="tabTx-yearly" onclick="fetchAnalytics('transaction', 'yearly')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-200 transition">Year</button>
           </div>
-
-          <!-- Summary Cards -->
           <div class="flex mx-4 mb-4 shadow-sm rounded-lg overflow-hidden border border-emerald-500">
              <div class="flex-1 bg-emerald-600 text-white p-3 text-center border-r border-emerald-500">
                 <div class="text-[11px] font-medium mb-1">Transaction amount</div>
@@ -409,60 +405,41 @@
                 <div class="font-bold text-lg" id="txSumIncome">Rp 0</div>
              </div>
           </div>
-
-          <!-- Chart Area -->
           <div class="px-2 mb-4 w-full h-48 relative">
              <canvas id="txChartCanvas"></canvas>
           </div>
-
-          <!-- List Detail -->
           <div class="border-t border-gray-100 pt-2 pb-10" id="txReportList"></div>
        </div>
     </div>
 
-    <!-- VIEW: PRODUCT ANALYTICS (WAVE DESIGN) -->
+    <!-- VIEW: PRODUCT ANALYTICS -->
     <div id="view-analytics-product" class="app-view bg-gray-50">
        <div class="flex items-center px-4 py-4 bg-white shadow-sm z-10 relative">
           <button onclick="navigate('report-menu')" class="text-emerald-600 font-bold p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
           <h1 class="text-base font-bold text-gray-800 ml-2 truncate">Sales per Product Report</h1>
        </div>
-       
        <div class="flex-1 overflow-y-auto">
-          <!-- Search Bar -->
           <div class="px-4 py-3 bg-white">
              <div class="bg-gray-50 border border-gray-200 rounded flex items-center px-3 py-2.5">
                 <svg class="w-5 h-5 text-gray-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 <input type="text" id="inpSearchProdSales" onkeyup="filterProductSalesUI()" placeholder="Search product name or code" class="bg-transparent w-full outline-none text-sm text-gray-700">
              </div>
           </div>
-
-          <!-- Tabs (Pills style) -->
           <div class="flex text-center text-[10px] font-bold text-white bg-emerald-500 mx-4 rounded-t-lg overflow-hidden mt-2">
              <div id="tabProd-daily" onclick="fetchAnalytics('product', 'daily')" class="flex-1 py-3 bg-emerald-600 cursor-pointer">TODAY</div>
              <div id="tabProd-monthly" onclick="fetchAnalytics('product', 'monthly')" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">THIS MONTH</div>
              <div id="tabProd-yearly" onclick="fetchAnalytics('product', 'yearly')" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">THIS YEAR</div>
              <div id="tabProd-custom" onclick="openCustomDateModal()" class="flex-1 py-3 border-l border-emerald-400 cursor-pointer hover:bg-emerald-600">SPECIAL</div>
           </div>
-
-          <!-- Big Green Summary Card with Wave -->
           <div class="mx-4 bg-emerald-500 rounded-b-lg p-5 text-white relative overflow-hidden mb-4 shadow-sm h-32 flex flex-col justify-center">
-             <!-- SVG Wave Background -->
              <svg class="absolute bottom-0 left-0 w-full h-20 opacity-20" viewBox="0 0 1440 320" preserveAspectRatio="none">
                <path fill="#ffffff" fill-opacity="1" d="M0,224L80,213.3C160,203,320,181,480,186.7C640,192,800,224,960,224C1120,224,1280,192,1360,176L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
              </svg>
              <div class="relative z-10 flex justify-between items-end">
-                <div>
-                   <div class="text-xs font-medium mb-1">Sold Qty</div>
-                   <div class="text-3xl font-bold" id="prodSumQty">0</div>
-                </div>
-                <div class="text-right">
-                   <div class="text-xs font-medium mb-1">Income</div>
-                   <div class="text-xl font-bold" id="prodSumIncome">Rp 0</div>
-                </div>
+                <div><div class="text-xs font-medium mb-1">Sold Qty</div><div class="text-3xl font-bold" id="prodSumQty">0</div></div>
+                <div class="text-right"><div class="text-xs font-medium mb-1">Income</div><div class="text-xl font-bold" id="prodSumIncome">Rp 0</div></div>
              </div>
           </div>
-
-          <!-- List Detail Data -->
           <div class="bg-white border-t border-gray-100 pb-24" id="prodReportList"></div>
        </div>
     </div>
@@ -849,64 +826,58 @@
     // =======================================================
     // WAJIB DIISI: MASUKKAN URL DEPLOY WEB APP ANDA DI SINI
     // =======================================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzKy2IshXe-hdfTpxgiHKCyZWZoURbQor-gR_vEbdfBFq-W2qV0ufIadFYNUzHb-dn-/exec"; 
+    const GAS_URL = "URL_GOOGLE_APPS_SCRIPT_ANDA_DISINI"; 
 
-    // BRIDGE API UTAMA (Menggantikan google.script.run)
+    // BRIDGE API UTAMA
     function callGAS(action, params, onSuccess) {
         if (!GAS_URL || GAS_URL.includes("URL_GOOGLE_APPS_SCRIPT")) {
             console.warn("GAS URL belum disetting. Menggunakan Mock Data (Mode Preview).");
             fallbackMockData(action, onSuccess, params);
             return;
         }
-
-        fetch(GAS_URL, {
-            redirect: "follow",
-            method: 'POST',
-            body: JSON.stringify({ action: action, params: params }),
-            headers: { "Content-Type": "text/plain;charset=utf-8" }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(onSuccess) onSuccess(data);
-        })
-        .catch(err => {
-            console.error("Fetch Error:", err);
-            showToast("Server offline, menggunakan data demo", "error");
-            fallbackMockData(action, onSuccess, params);
-        });
+        fetch(GAS_URL, { redirect: "follow", method: 'POST', body: JSON.stringify({ action: action, params: params }), headers: { "Content-Type": "text/plain;charset=utf-8" } })
+        .then(res => res.json()).then(data => { if(onSuccess) onSuccess(data); })
+        .catch(err => { console.error("Fetch Error:", err); showToast("Server offline, menggunakan data demo", "error"); fallbackMockData(action, onSuccess, params); });
     }
 
-    // FUNGSI DEMO (Jika GAS_URL tidak diisi / Error)
+    // FUNGSI DEMO
     function fallbackMockData(action, onSuccess, p) {
         setTimeout(() => {
             if (action === 'loginUser') {
                if (p.email === 'owner' && p.password === '123') onSuccess({status:'success', data:{id:'STF-01', name:'Owner AMP', role:'Owner'}});
                else onSuccess({status:'success', data:{id:'STF-02', name:'Kasir AMP', role:'Kasir'}});
             }
-            else if (action === 'getSettings') {
-               onSuccess({status:'success', data: {storeName: 'Kasir AMP', storeTagline: 'PWA Demo Store'}});
-            }
-            else if (action === 'getProducts') {
-               onSuccess({status:'success', data: [ { id: 'ME-01', name: 'Melon Honey Stripe', price: 45000, basePrice: 30000, stock: 120, unit: 'Kg', image: '', variants: [{grade: 'Grade A', price: 50000}, {grade: 'Grade B', price: 40000}] }, { id: 'AP-03', name: 'Apel Fuji Premium', price: 15000, basePrice: 10000, stock: 200, unit: 'Pcs', image: '' } ]});
-            }
-            else if (action === 'getStaffList') {
-               onSuccess({status:'success', data: [{id:'1', name:'Owner AMP', role:'Owner', email:'owner'}, {id:'2', name:'Kasir AMP', role:'Kasir', email:'kasir'}]});
-            }
+            else if (action === 'getSettings') { onSuccess({status:'success', data: {storeName: 'Kasir AMP', storeTagline: 'PWA Demo Store'}}); }
+            else if (action === 'getProducts') { onSuccess({status:'success', data: [ { id: 'ME-01', name: 'Melon Honey Stripe', price: 45000, basePrice: 30000, stock: 120, unit: 'Kg', image: '', variants: [{grade: 'Grade A', price: 50000}, {grade: 'Grade B', price: 40000}] }, { id: 'AP-03', name: 'Apel Fuji Premium', price: 15000, basePrice: 10000, stock: 200, unit: 'Pcs', image: '' } ]}); }
+            else if (action === 'getStaffList') { onSuccess({status:'success', data: [{id:'1', name:'Owner AMP', role:'Owner', email:'owner'}, {id:'2', name:'Kasir AMP', role:'Kasir', email:'kasir'}]}); }
             else if (action === 'getAnalyticsData') {
-               if(p.type === 'transaction') {
-                   onSuccess({status:'success', data: [{ period: 'Hari Ini', totalSales: 850000, trxCount: 5, dailyTrxList: [ { id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: '16/05/2026 08:15' } ] }]});
-               } else {
-                   onSuccess({status:'success', data: [{ id: 'ME-01', name: 'Melon Honey Stripe', qty: 25, revenue: 1125000 }]});
-               }
+               if(p.type === 'transaction') { onSuccess({status:'success', data: [{ period: 'Hari Ini', totalSales: 850000, trxCount: 5, dailyTrxList: [ { id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: '16/05/2026 08:15' } ] }]}); } 
+               else { onSuccess({status:'success', data: [{ id: 'ME-01', name: 'Melon Honey Stripe', qty: 25, revenue: 1125000 }]}); }
             }
-            else if (action === 'getTrxDetailByPeriod') {
-                onSuccess({status: 'success', data: [{ id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: p.periodStr + ' 08:15' }]});
-            }
-            else {
-               // Default mock response
-               onSuccess({status:'success', message:'Tersimpan di mode demo', trxId: 'TRX-DEMO'});
-            }
+            else if (action === 'getTrxDetailByPeriod') { onSuccess({status: 'success', data: [{ id: 'TRX-1A2B', time: '08:15', cashier: 'Kasir AMP', total: 150000, date: p.periodStr + ' 08:15' }]}); }
+            else { onSuccess({status:'success', message:'Tersimpan di mode demo', trxId: 'TRX-DEMO'}); }
         }, 800);
+    }
+
+    // =======================================================
+    // SMART COMPRESSOR WEBP (ANTI BLUR & ANTI ERROR GOOGLE SHEET)
+    // =======================================================
+    function compressToGoogleSheetSafe(img, initialSize, fillWhite = false) {
+        const tryCompress = (maxSize, quality) => {
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            let width = img.width; let height = img.height;
+            if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } 
+            else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
+            canvas.width = width; canvas.height = height;
+            if (fillWhite) { ctx.fillStyle = "white"; ctx.fillRect(0, 0, width, height); }
+            ctx.drawImage(img, 0, 0, width, height);
+            return canvas.toDataURL('image/webp', quality); // Pakai WEBP agar file kecil tapi tajam
+        };
+
+        let result = tryCompress(initialSize, 0.9); // Coba resolusi tinggi dulu
+        if (result.length > 48000) result = tryCompress(initialSize * 0.8, 0.8); // Turunkan sedikit jika kepanjangan
+        if (result.length > 48000) result = tryCompress(initialSize * 0.6, 0.7); // Turunkan lagi jika masih kepanjangan
+        return result;
     }
 
 
@@ -1019,10 +990,10 @@
        const file = event.target.files[0]; if(!file) return; 
        const reader = new FileReader(); reader.onload = function(e) { 
            const img = new Image(); img.onload = function() { 
-               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 400; let width = img.width; let height = img.height; 
-               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
-               canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
-               currentImageBase64 = canvas.toDataURL('image/jpeg', 0.9); document.getElementById('storeLogoPreview').src = currentImageBase64; document.getElementById('storeLogoPreview').classList.remove('hidden'); document.getElementById('storeLogoPlaceholder').classList.add('hidden'); 
+               let base64 = compressToGoogleSheetSafe(img, 400, false);
+               if(base64.length > 48000) { showToast("Gagal kompresi logo.", "error"); return; }
+               currentImageBase64 = base64; 
+               document.getElementById('storeLogoPreview').src = currentImageBase64; document.getElementById('storeLogoPreview').classList.remove('hidden'); document.getElementById('storeLogoPlaceholder').classList.add('hidden'); 
            }; img.src = e.target.result; 
        }; reader.readAsDataURL(file);
     }
@@ -1033,10 +1004,10 @@
        const file = event.target.files[0]; if(!file) return; 
        const reader = new FileReader(); reader.onload = function(e) { 
            const img = new Image(); img.onload = function() { 
-               const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_SIZE = 800; let width = img.width; let height = img.height; 
-               if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } 
-               canvas.width = width; canvas.height = height; ctx.fillStyle = "white"; ctx.fillRect(0, 0, width, height); ctx.drawImage(img, 0, 0, width, height); 
-               currentQrisBase64 = canvas.toDataURL('image/jpeg', 0.9); document.getElementById('qrisPreview').src = currentQrisBase64; document.getElementById('qrisPreview').classList.remove('hidden'); document.getElementById('qrisPlaceholder').classList.add('hidden'); document.getElementById('btnClearQris').classList.remove('hidden'); 
+               let base64 = compressToGoogleSheetSafe(img, 600, true);
+               if(base64.length > 48000) { showToast("Gambar QRIS terlalu besar untuk disimpan.", "error"); return; }
+               currentQrisBase64 = base64; 
+               document.getElementById('qrisPreview').src = currentQrisBase64; document.getElementById('qrisPreview').classList.remove('hidden'); document.getElementById('qrisPlaceholder').classList.add('hidden'); document.getElementById('btnClearQris').classList.remove('hidden'); 
            }; img.src = e.target.result; 
        }; reader.readAsDataURL(file);
     }
@@ -1131,17 +1102,20 @@
       });
     }
 
+    // MEMBUAT FOTO PRODUK MENJADI SANGAT TAJAM (WEBP)
     function previewImage(event) { 
         const file = event.target.files[0]; if(!file) return; 
         const reader = new FileReader(); reader.onload = function(e) { 
             const img = new Image(); img.onload = function() { 
-                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); 
-                const MAX_WIDTH = 600; const MAX_HEIGHT = 600; 
-                let width = img.width; let height = img.height; 
-                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } 
-                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); 
-                currentImageBase64 = canvas.toDataURL('image/jpeg', 0.9); 
-                document.getElementById('imagePreview').src = currentImageBase64; document.getElementById('imagePreview').classList.remove('hidden'); document.getElementById('imagePlaceholder').classList.add('hidden'); 
+                let base64 = compressToGoogleSheetSafe(img, 600, false);
+                if(base64.length > 48000) { 
+                    showToast("Gambar terlalu besar. Gagal kompresi untuk Google Sheet.", "error"); 
+                    return; 
+                }
+                currentImageBase64 = base64; 
+                document.getElementById('imagePreview').src = currentImageBase64; 
+                document.getElementById('imagePreview').classList.remove('hidden'); 
+                document.getElementById('imagePlaceholder').classList.add('hidden'); 
             }; img.src = e.target.result; 
         }; reader.readAsDataURL(file); 
     }
