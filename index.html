@@ -1,30 +1,13 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kasir AMP</title>
-    
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#2ecc71">
-    
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #f8fafc; }
-        iframe { width: 100%; height: 100%; border: none; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Membuka Kasir AMP...</title>
+  <!-- GANTI LINK DI BAWAH INI DENGAN LINK WEB APP GOOGLE APPS SCRIPT ANDA (/exec) -->
+  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbz7SiYVGg104EtgHZ7WWg5QYpKINGSD0RLtmeRpGUj13nTPT-aO8D-OG-728zc0A5-V/exec">
 </head>
-<body>
-    <iframe src="https://script.google.com/macros/s/AKfycbz7SiYVGg104EtgHZ7WWg5QYpKINGSD0RLtmeRpGUj13nTPT-aO8D-OG-728zc0A5-V/exec" allow="geolocation; camera" style="width:100%; height:100%; border:none;"></iframe>
-
-    <script>
-        // PERBAIKAN PATH: Menggunakan ./sw.js
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Terdaftar!', reg))
-                    .catch(err => console.error('Service Worker Gagal!', err));
-            });
-        }
-    </script>
+<body style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+  <h3>Sedang mengalihkan ke aplikasi Kasir AMP...</h3>
+  <p>Jika tidak dialihkan secara otomatis, <a href="https://script.google.com/macros/s/AKfycbz7SiYVGg104EtgHZ7WWg5QYpKINGSD0RLtmeRpGUj13nTPT-aO8D-OG-728zc0A5-V/exec">klik di sini</a>.</p>
 </body>
 </html>
