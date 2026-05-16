@@ -1697,6 +1697,13 @@
             listContainer.innerHTML += '<div class="flex items-center px-4 py-4 border-b border-gray-100 bg-white hover:bg-gray-50 transition cursor-default"><div class="w-12 h-12 bg-gray-100 rounded text-gray-300 font-extrabold flex items-center justify-center text-xl mr-4 flex-shrink-0 border border-gray-200">' + initial + '</div><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-sm text-gray-800 truncate leading-tight">' + item.name + '</div><div class="flex space-x-6 mt-1.5"><div><div class="text-[10px] text-gray-500 mb-0.5">Profit</div><div class="font-bold text-xs text-gray-800">' + formatRupiah(item.revenue) + '</div></div><div><div class="text-[10px] text-gray-500 mb-0.5">Income</div><div class="font-bold text-xs text-gray-800">' + formatRupiah(item.revenue) + '</div></div></div></div><div class="border border-gray-300 rounded px-2.5 py-1 text-sm font-bold text-gray-700 flex-shrink-0 bg-white">' + parseFloat(item.qty.toFixed(2)) + '</div></div>';
         });
     }
+      if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker terdaftar!', reg))
+      .catch(err => console.error('Service Worker gagal terdaftar', err));
+  });
+}
     </script>
 </body>
 </html>
