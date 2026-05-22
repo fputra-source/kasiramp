@@ -830,7 +830,7 @@
 
     // BRIDGE API UTAMA
     function callGAS(action, params, onSuccess) {
-        if (!GAS_URL || GAS_URL.includes("https://script.google.com/macros/s/AKfycbzKy2IshXe-hdfTpxgiHKCyZWZoURbQor-gR_vEbdfBFq-W2qV0ufIadFYNUzHb-dn-/exec")) {
+        if (!GAS_URL || GAS_URL.includes("URL_GOOGLE_APPS_SCRIPT")) {
             console.warn("GAS URL belum disetting. Menggunakan Mock Data (Mode Preview).");
             fallbackMockData(action, onSuccess, params);
             return;
